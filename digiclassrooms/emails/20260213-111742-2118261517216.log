@@ -1,0 +1,27 @@
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+Subject: Password reset on 127.0.0.1:8000
+From: webmaster@localhost
+To: 123@123.com
+Date: Fri, 13 Feb 2026 05:47:42 +0000
+Message-ID: <177096166228.28484.2879373390475714311@ukbook2005>
+
+
+You're receiving this email because you requested a password reset for your u=
+ser account at 127.0.0.1:8000.
+
+Please go to the following page and choose a new password:
+
+http://127.0.0.1:8000/users/reset_password_confirm/MQ/d3xrdi-d797141586839f19=
+00bdc0db89334f6f/
+
+In case you=E2=80=99ve forgotten, you are: udayk
+
+Thanks for using our site!
+
+The 127.0.0.1:8000 team
+
+
+
+-------------------------------------------------------------------------------

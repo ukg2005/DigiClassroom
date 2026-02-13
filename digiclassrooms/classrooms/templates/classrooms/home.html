@@ -1,0 +1,9 @@
+{% extends 'users/base.html' %}
+{% block content %}
+    <h1>Welcome to DigiClassroom</h1>
+    {% if user.is_authenticated %}
+        <p>This is your dashboard.</p>
+    {% else %}
+        <p>Please login to continue.</p>
+    {% endif %}
+{% endblock %}
