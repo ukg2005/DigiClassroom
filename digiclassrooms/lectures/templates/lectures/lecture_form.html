@@ -1,0 +1,27 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<h3>Add New Lecture</h3>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="id_title" class="form-label">Title</label>
+        {{ form.title }}
+        {% if form.title.errors %}
+            <div class="text-danger">{{ form.title.errors }}</div>
+        {% endif %}
+    </div>
+    <div class="mb-3">
+        <label for="id_youtube_link" class="form-label">YouTube Link</label>
+        {{ form.youtube_link }}
+        {% if form.youtube_link.help_text %}
+            <div class="form-text">{{ form.youtube_link.help_text }}</div>
+        {% endif %}
+        {% if form.youtube_link.errors %}
+            <div class="text-danger">{{ form.youtube_link.errors }}</div>
+        {% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary">Add Lecture</button>
+    <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

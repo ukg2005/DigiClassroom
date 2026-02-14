@@ -1,0 +1,41 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<h3>Add Question to: {{ assignment.title }}</h3>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label>Question Text</label>
+        <input type="text" name="question_text" class="form-control" required>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-2">
+            <label>Option 1</label>
+            <input type="text" name="option1" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-2">
+            <label>Option 2</label>
+            <input type="text" name="option2" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-2">
+            <label>Option 3</label>
+            <input type="text" name="option3" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-2">
+            <label>Option 4</label>
+            <input type="text" name="option4" class="form-control" required>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label>Correct Option (1-4)</label>
+        <select name="correct_option" class="form-select">
+            <option value="1">Option 1</option>
+            <option value="2">Option 2</option>
+            <option value="3">Option 3</option>
+            <option value="4">Option 4</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Save Question</button>
+    <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-secondary">Done</a>
+</form>
+{% endblock %}

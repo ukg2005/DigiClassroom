@@ -1,0 +1,94 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <h3>{{ lecture.title }}</h3>
+        {% if lecture.get_video_id %}
+        <div class="ratio ratio-16x9 mb-4">
+            <iframe src="https://www.youtube-nocookie.com/embed/{{ lecture.get_video_id }}?rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        {% else %}
+        <div class="alert alert-warning mb-4">
+            <strong>Invalid YouTube URL</strong><br>
+            Please provide a valid YouTube link. Current link: <br>
+            <code>{{ lecture.youtube_link }}</code>
+        </div>
+        {% endif %}
+        <a href="{% url 'lectures_list' lecture.classroom.pk %}" class="btn btn-outline-secondary mb-3">Back to Lectures</a>
+    </div>
+    <div class="col-lg-4">
+        <h4>Doubts & Comments</h4>
+        <div class="mb-3" style="max-height: 500px; overflow-y: auto;">
+            {% for comment in comments %}
+                <div class="card mb-2">
+                    <div class="card-body py-2">
+                        <small class="fw-bold">{{ comment.author.username }}</small>
+                        <p class="mb-0">{{ comment.content }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
+                            <button class="btn btn-sm btn-link p-0 reply-btn" data-comment-id="{{ comment.id }}" data-author="{{ comment.author.username }}">Reply</button>
+                        </div>
+                        
+                        {% if comment.replies.all %}
+                            <div class="mt-2 ps-3 border-start border-2">
+                                {% for reply in comment.replies.all %}
+                                    <div class="card mb-1 bg-light">
+                                        <div class="card-body py-1 px-2">
+                                            <small class="fw-bold">{{ reply.author.username }}</small>
+                                            <p class="mb-0 small">{{ reply.content }}</p>
+                                            <small class="text-muted" style="font-size: 0.7rem;">{{ reply.created_at|timesince }} ago</small>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">No doubts asked yet.</p>
+            {% endfor %}
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h6 id="form-title">Post a Comment</h6>
+                <form method="post" id="comment-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="parent_id" id="parent_id" value="">
+                    {{ form.content }}
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <button type="submit" class="btn btn-sm btn-success">Post</button>
+                        <button type="button" class="btn btn-sm btn-secondary d-none" id="cancel-reply">Cancel Reply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const replyButtons = document.querySelectorAll('.reply-btn');
+    const parentIdInput = document.getElementById('parent_id');
+    const formTitle = document.getElementById('form-title');
+    const cancelButton = document.getElementById('cancel-reply');
+    
+    replyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const author = this.dataset.author;
+            parentIdInput.value = commentId;
+            formTitle.textContent = 'Reply to ' + author;
+            cancelButton.classList.remove('d-none');
+            document.getElementById('id_content').focus();
+        });
+    });
+    
+    cancelButton.addEventListener('click', function() {
+        parentIdInput.value = '';
+        formTitle.textContent = 'Post a Comment';
+        cancelButton.classList.add('d-none');
+    });
+});
+</script>
+{% endblock %}

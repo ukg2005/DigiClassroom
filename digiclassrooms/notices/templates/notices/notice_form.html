@@ -1,0 +1,18 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<h3>Post a New Notice</h3>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label>Title</label>
+        <input type="text" name="title" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>Content</label>
+        <textarea name="content" class="form-control" rows="5" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Post Notice</button>
+    <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

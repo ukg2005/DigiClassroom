@@ -1,0 +1,31 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-8">
+        <h3>{{ classroom.name }} - Assignments</h3>
+    </div>
+    {% if is_teacher %}
+    <div class="col-md-4 text-end">
+        <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-primary">+ Create Assignment</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="list-group">
+    {% for assignment in assignments %}
+        <a href="{% url 'assignment_detail' assignment.pk %}" class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ assignment.title }}</h5>
+                <small>{{ assignment.created_at|date:"M d, Y" }}</small>
+            </div>
+            <p class="mb-1">{{ assignment.questions.count }} Questions</p>
+        </a>
+    {% empty %}
+        <div class="alert alert-info">No assignments created yet.</div>
+    {% endfor %}
+</div>
+<div class="mt-3">
+    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">Back to Classroom</a>
+</div>
+{% endblock %}

@@ -1,7 +1,51 @@
 {% extends 'users/base.html' %}
 {% block content %}
-<h2>Student Dashboard</h2>
-<p>Welcome, {{ user.username }}!</p>
-<button>Join a Class</button>
-<button>My Grades</button>
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Student Dashboard</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'enroll_classroom' %}" class="btn btn-success">Find Classes to Join</a>
+    </div>
+</div>
+
+<div class="row">
+    {% for classroom in enrolled_classrooms %}
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ classroom.name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Teacher: {{ classroom.teacher.username }}</h6>
+                    <p class="card-text">{{ classroom.description|truncatewords:20 }}</p>
+                    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-primary w-100">Enter Classroom</a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">You are not enrolled in any classrooms yet.</div>
+        </div>
+    {% endfor %}
+</div>
+
+{% if available_classrooms %}
+<h4 class="mt-4">Available Classes</h4>
+<div class="row">
+    {% for classroom in available_classrooms %}
+        <div class="col-md-3">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">{{ classroom.name }}</h6>
+                    <p class="small">{{ classroom.teacher.username }}</p>
+                    <form method="post" action="{% url 'enroll_classroom' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="classroom_id" value="{{ classroom.pk }}">
+                        <button type="submit" class="btn btn-sm btn-outline-success w-100">Enroll</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
 {% endblock %}

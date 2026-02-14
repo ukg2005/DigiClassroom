@@ -1,0 +1,41 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-8">
+        <h3>{{ classroom.name }} - Lectures</h3>
+    </div>
+    {% if is_teacher %}
+    <div class="col-md-4 text-end">
+        <a href="{% url 'lecture_create' classroom.pk %}" class="btn btn-primary">+ Add Lecture</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row">
+    {% for lecture in lectures %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                {% if lecture.get_video_id %}
+                <div class="ratio ratio-16x9 mb-2">
+                    <iframe src="https://www.youtube-nocookie.com/embed/{{ lecture.get_video_id }}?rel=0" title="{{ lecture.title }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+                {% else %}
+                <div class="alert alert-warning m-2 mb-0">
+                    <small>Invalid YouTube URL</small>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ lecture.title }}</h5>
+                    <a href="{% url 'lecture_detail' lecture.pk %}" class="btn btn-primary w-100">Open & Discuss</a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12"><div class="alert alert-info">No lectures added yet.</div></div>
+    {% endfor %}
+</div>
+<div class="mt-3">
+    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">Back to Classroom</a>
+</div>
+{% endblock %}

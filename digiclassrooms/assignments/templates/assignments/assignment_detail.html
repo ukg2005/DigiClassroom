@@ -1,0 +1,50 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>{{ assignment.title }}</h2>
+        <p class="text-muted">Total Questions: {{ questions.count }}</p>
+    </div>
+</div>
+
+{% if is_teacher %}
+    <div class="mb-4">
+        <a href="{% url 'add_question' assignment.pk %}" class="btn btn-success">+ Add Question</a>
+        <a href="{% url 'view_submissions' assignment.pk %}" class="btn btn-info">View Submissions</a>
+        <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-secondary">Back to List</a>
+    </div>
+    
+    <h4>Questions Preview:</h4>
+    <ol>
+    {% for q in questions %}
+        <li>
+            <strong>{{ q.text }}</strong>
+            <ul>
+            {% for choice in q.choices.all %}
+                <li {% if choice.is_correct %}class="text-success fw-bold"{% endif %}>{{ choice.text }}</li>
+            {% endfor %}
+            </ul>
+        </li>
+    {% empty %}
+        <p class="text-muted">No questions added yet.</p>
+    {% endfor %}
+    </ol>
+
+{% else %}
+    {% if submission %}
+        <div class="alert alert-success">
+            <h4>You have submitted this assignment.</h4>
+            <p>Score: {{ submission.score }}/{{ questions.count }}</p>
+            <a href="{% url 'submission_detail' submission.pk %}" class="btn btn-primary">View Result & Feedback</a>
+        </div>
+    {% else %}
+        {% if questions.count > 0 %}
+            <a href="{% url 'take_assignment' assignment.pk %}" class="btn btn-lg btn-success">Start Quiz</a>
+        {% else %}
+            <div class="alert alert-warning">No questions available yet.</div>
+        {% endif %}
+    {% endif %}
+    <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-secondary mt-3">Back to List</a>
+{% endif %}
+{% endblock %}

@@ -1,7 +1,66 @@
 {% extends 'users/base.html' %}
 {% block content %}
-<h2>Teacher Dashboard</h2>
-<p>Welcome, Teacher {{ user.username }}!</p>
-<button>Create New Class</button>
-<button>Detailed Reports</button>
+<div class="row">
+    <div class="col-md-12 text-center mb-4">
+        <h2>Teacher Dashboard</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">My Classroom</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ classroom.name }}</h5>
+                <p class="card-text">{{ classroom.description }}</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-outline-primary">Notice Board</a>
+                    <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-outline-primary">Lectures</a>
+                    <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-outline-primary">Assignments</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <h4>Recent Activity</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">Latest Notices</div>
+                    <ul class="list-group list-group-flush">
+                        {% for notice in notices %}
+                            <li class="list-group-item">
+                                <a href="{% url 'notice_detail' notice.pk %}">{{ notice.title }}</a>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">No notices yet.</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="card-body">
+                        <a href="{% url 'notice_create' classroom.pk %}" class="btn btn-sm btn-primary">+ Post Notice</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                 <div class="card mb-3">
+                    <div class="card-header">Latest Assignments</div>
+                    <ul class="list-group list-group-flush">
+                        {% for assignment in assignments %}
+                            <li class="list-group-item">
+                                <a href="{% url 'assignment_detail' assignment.pk %}">{{ assignment.title }}</a>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">No assignments yet.</li>
+                        {% endfor %}
+                    </ul>
+                     <div class="card-body">
+                        <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-sm btn-primary">+ Create Assignment</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

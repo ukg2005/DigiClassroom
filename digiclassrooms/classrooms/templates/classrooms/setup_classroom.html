@@ -1,0 +1,27 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">Setup Your Classroom</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Classroom Name</label>
+                        {{ form.name.errors }}
+                        <input type="text" name="name" class="form-control" value="{{ form.name.value|default:'' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        {{ form.description.errors }}
+                        <textarea name="description" class="form-control">{{ form.description.value|default:'' }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Create Classroom</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

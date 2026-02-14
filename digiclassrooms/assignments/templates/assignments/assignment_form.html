@@ -1,0 +1,14 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<h3>Create Assignment Title</h3>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label>Title</label>
+        <input type="text" name="title" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Next: Add Questions</button>
+    <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<h3>Submissions for: {{ assignment.title }}</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Student</th>
+            <th>Score</th>
+            <th>Submitted At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sub in submissions %}
+            <tr>
+                <td>{{ sub.student.username }}</td>
+                <td>{{ sub.score }}</td>
+                <td>{{ sub.submitted_at }}</td>
+                <td><a href="{% url 'submission_detail' sub.pk %}" class="btn btn-sm btn-primary">Review</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">No submissions yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-secondary">Back to Assignment</a>
+{% endblock %}
