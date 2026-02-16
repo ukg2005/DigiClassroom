@@ -1,41 +1,115 @@
 {% extends 'users/base.html' %}
+{% block title %}Submission Detail - DigiClassroom{% endblock %}
 
 {% block content %}
-<h3>Submission Detail</h3>
-<p><strong>Student:</strong> {{ submission.student.username }}</p>
-<p><strong>Assignment:</strong> {{ submission.assignment.title }}</p>
-<p><strong>Score:</strong> {{ submission.score }}</p>
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white;">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Submission Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong><i class="fas fa-user me-2 text-primary"></i>Student:</strong> {{ submission.student.username }}</p>
+                        <p class="mb-0"><strong><i class="fas fa-clipboard me-2 text-primary"></i>Assignment:</strong> {{ submission.assignment.title }}</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="display-6 fw-bold text-success">
+                            <i class="fas fa-chart-line me-2"></i>{{ submission.score }}/{{ answers|length }}
+                        </div>
+                        <p class="text-muted">Score</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<h4>Feedback</h4>
-{% if is_teacher %}
-<form method="post">
-    {% csrf_token %}
-    <textarea name="feedback" class="form-control" rows="3" placeholder="Leave feedback...">{{ submission.teacher_feedback|default:'' }}</textarea>
-    <button type="submit" class="btn btn-primary mt-2">Update Feedback</button>
-</form>
-{% else %}
-<div class="alert alert-secondary">
-    {{ submission.teacher_feedback|default:"No feedback yet." }}
-</div>
-{% endif %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comment-dots me-2"></i>Teacher Feedback</h5>
+            </div>
+            <div class="card-body">
+                {% if is_teacher %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Leave feedback for the student:</label>
+                            <textarea name="feedback" class="form-control" rows="4" placeholder="Provide constructive feedback on the student's performance...">{{ submission.teacher_feedback|default:'' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update Feedback
+                        </button>
+                    </form>
+                {% else %}
+                    {% if submission.teacher_feedback %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-comment me-2"></i>{{ submission.teacher_feedback }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary">
+                            <i class="fas fa-hourglass-half me-2"></i>No feedback yet from your teacher.
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
 
-<h4 class="mt-4">Answers</h4>
-<ul class="list-group">
-    {% for ans in answers %}
-        <li class="list-group-item">
-            <p class="mb-1"><strong>{{ ans.question.text }}</strong></p>
-            <p class="mb-0 {% if ans.selected_choice.is_correct %}text-success{% else %}text-danger{% endif %}">
-                Selected: {{ ans.selected_choice.text }} 
-                {% if ans.selected_choice.is_correct %}(Correct){% else %}(Incorrect){% endif %}
-            </p>
-        </li>
-    {% endfor %}
-</ul>
-<div class="mt-3">
-    {% if is_teacher %}
-         <a href="{% url 'view_submissions' submission.assignment.pk %}" class="btn btn-secondary">Back to Submissions</a>
-    {% else %}
-         <a href="{% url 'assignment_detail' submission.assignment.pk %}" class="btn btn-secondary">Back to Assignment</a>
-    {% endif %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Answer Review</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for ans in answers %}
+                        <div class="list-group-item {% if ans.choice.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2 fw-bold">{{ forloop.counter }}. {{ ans.question.text }}</h6>
+                                    <p class="mb-1">
+                                        {% if ans.choice.is_correct %}
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <strong>Your answer:</strong> {{ ans.choice.text }}
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-danger me-2"></i>
+                                            <strong>Your answer:</strong> <span class="text-danger">{{ ans.choice.text }}</span>
+                                        {% endif %}
+                                    </p>
+                                    {% if not ans.choice.is_correct %}
+                                        <p class="mb-0 mt-1">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <strong>Correct answer:</strong> <span class="text-success">
+                                                {% for choice in ans.question.choices.all %}
+                                                    {% if choice.is_correct %}{{ choice.text }}{% endif %}
+                                                {% endfor %}
+                                            </span>
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if ans.choice.is_correct %}
+                                        <span class="badge bg-success">Correct</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Incorrect</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            {% if is_teacher %}
+                <a href="{% url 'view_submissions' submission.assignment.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Submissions
+                </a>
+            {% else %}
+                <a href="{% url 'assignment_detail' submission.assignment.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Assignment
+                </a>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}

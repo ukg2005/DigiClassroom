@@ -1,27 +1,58 @@
 {% extends 'users/base.html' %}
+{% block title %}Add Lecture - DigiClassroom{% endblock %}
 
 {% block content %}
-<h3>Add New Lecture</h3>
-<form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-        <label for="id_title" class="form-label">Title</label>
-        {{ form.title }}
-        {% if form.title.errors %}
-            <div class="text-danger">{{ form.title.errors }}</div>
-        {% endif %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-lg">
+            <div class="card-header" style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white;">
+                <h5 class="mb-0"><i class="fas fa-video me-2"></i>Add New Lecture</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fab fa-youtube fa-4x text-danger mb-3"></i>
+                    <p class="text-muted">Share a YouTube video with your students</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_title" class="form-label fw-bold">
+                            <i class="fas fa-heading me-2"></i>Lecture Title
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_youtube_link" class="form-label fw-bold">
+                            <i class="fab fa-youtube me-2"></i>YouTube Link
+                        </label>
+                        {{ form.youtube_link }}
+                        {% if form.youtube_link.help_text %}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>{{ form.youtube_link.help_text }}
+                            </div>
+                        {% endif %}
+                        {% if form.youtube_link.errors %}
+                            <div class="text-danger small mt-1">{{ form.youtube_link.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="fas fa-plus-circle me-2"></i>Add Lecture
+                        </button>
+                        <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="id_youtube_link" class="form-label">YouTube Link</label>
-        {{ form.youtube_link }}
-        {% if form.youtube_link.help_text %}
-            <div class="form-text">{{ form.youtube_link.help_text }}</div>
-        {% endif %}
-        {% if form.youtube_link.errors %}
-            <div class="text-danger">{{ form.youtube_link.errors }}</div>
-        {% endif %}
-    </div>
-    <button type="submit" class="btn btn-primary">Add Lecture</button>
-    <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-secondary">Cancel</a>
-</form>
+</div>
 {% endblock %}

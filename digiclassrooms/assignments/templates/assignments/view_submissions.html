@@ -1,28 +1,68 @@
 {% extends 'users/base.html' %}
+{% block title %}Submissions - {{ assignment.title }}{% endblock %}
 
 {% block content %}
-<h3>Submissions for: {{ assignment.title }}</h3>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Student</th>
-            <th>Score</th>
-            <th>Submitted At</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for sub in submissions %}
-            <tr>
-                <td>{{ sub.student.username }}</td>
-                <td>{{ sub.score }}</td>
-                <td>{{ sub.submitted_at }}</td>
-                <td><a href="{% url 'submission_detail' sub.pk %}" class="btn btn-sm btn-primary">Review</a></td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="4">No submissions yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-<a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-secondary">Back to Assignment</a>
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h3 class="fw-bold">
+            <i class="fas fa-users me-2 text-primary"></i>Submissions for: {{ assignment.title }}
+        </h3>
+        <p class="text-muted">Review and provide feedback to student submissions</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>All Submissions</h5>
+            <span class="badge bg-primary">{{ submissions|length }} Total</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if submissions %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="fas fa-user me-2"></i>Student</th>
+                            <th><i class="fas fa-chart-bar me-2"></i>Score</th>
+                            <th><i class="fas fa-calendar me-2"></i>Submitted At</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in submissions %}
+                            <tr>
+                                <td class="fw-bold">{{ sub.student.username }}</td>
+                                <td>
+                                    <span class="badge bg-success">{{ sub.score }} points</span>
+                                </td>
+                                <td class="text-muted">
+                                    <small>{{ sub.submitted_at|date:"M d, Y H:i" }}</small>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'submission_detail' sub.pk %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye me-1"></i>Review
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">No Submissions Yet</h5>
+                <p class="text-muted">Students haven't submitted this assignment yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Assignment
+    </a>
+</div>
 {% endblock %}

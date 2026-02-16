@@ -99,5 +99,23 @@ STATIC_URL = 'static/'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 
+# Email Configuration
+# For development: emails will be printed to console
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# For production: Uncomment and configure the settings below
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'  # Use your email provider's SMTP server
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your-email@gmail.com'  # Your email address
+# EMAIL_HOST_PASSWORD = 'your-app-password'  # Your email password or app password
+# DEFAULT_FROM_EMAIL = 'DigiClassroom <your-email@gmail.com>'
+
+# Alternative: For file-based email backend (saves emails to files for testing)
+# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+# EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 

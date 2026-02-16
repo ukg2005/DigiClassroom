@@ -1,14 +1,40 @@
 {% extends 'users/base.html' %}
+{% block title %}Create Assignment - DigiClassroom{% endblock %}
 
 {% block content %}
-<h3>Create Assignment Title</h3>
-<form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-        <label>Title</label>
-        <input type="text" name="title" class="form-control" required>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-lg">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--secondary-color), #059669); color: white;">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Create New Assignment</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-file-alt fa-3x text-success mb-3"></i>
+                    <p class="text-muted">First, give your assignment a title</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-heading me-2"></i>Assignment Title
+                        </label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g., Chapter 1 Quiz" required>
+                        <div class="form-text">Choose a descriptive title for your assignment</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-arrow-right me-2"></i>Next: Add Questions
+                        </button>
+                        <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary">Next: Add Questions</button>
-    <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-secondary">Cancel</a>
-</form>
+</div>
 {% endblock %}

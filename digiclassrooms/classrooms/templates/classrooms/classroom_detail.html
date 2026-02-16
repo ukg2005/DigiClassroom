@@ -1,42 +1,60 @@
 {% extends 'users/base.html' %}
+{% block title %}{{ classroom.name }} - DigiClassroom{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-12">
-            <h2>{{ classroom.name }}</h2>
-            <p class="text-muted">{{ classroom.description }}</p>
+            <h2 class="fw-bold"><i class="fas fa-school text-primary me-2"></i>{{ classroom.name }}</h2>
+            <p class="text-muted mb-2">{{ classroom.description }}</p>
             {% if is_teacher %}
-                <span class="badge bg-primary">Teacher View</span>
+                <span class="badge bg-primary"><i class="fas fa-chalkboard-teacher me-1"></i>Teacher View</span>
+            {% else %}
+                <span class="badge bg-success"><i class="fas fa-user-graduate me-1"></i>Student</span>
             {% endif %}
         </div>
     </div>
 
-    <div class="row">
+    <div class="row g-4">
         <div class="col-md-4">
-            <div class="card text-center mb-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Notice Board</h5>
-                    <p class="card-text">Announcements and discussions.</p>
-                    <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-primary">View Notices</a>
+            <div class="card text-center h-100">
+                <div class="card-body d-flex flex-column justify-content-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-bullhorn fa-3x text-primary mb-3"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Notice Board</h5>
+                    <p class="card-text text-muted">Announcements and discussions</p>
+                    <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-primary mt-auto">
+                        <i class="fas fa-arrow-right me-2"></i>View Notices
+                    </a>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center mb-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Lectures</h5>
-                    <p class="card-text">Video lessons and doubts.</p>
-                    <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-primary">Watch Lectures</a>
+            <div class="card text-center h-100">
+                <div class="card-body d-flex flex-column justify-content-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-video fa-3x text-danger mb-3"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Lectures</h5>
+                    <p class="card-text text-muted">Video lessons and Q&A</p>
+                    <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-danger mt-auto">
+                        <i class="fas fa-play me-2"></i>Watch Lectures
+                    </a>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center mb-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Assignments</h5>
-                    <p class="card-text">MCQ Quizzes and Results.</p>
-                    <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-primary">Assignments</a>
+            <div class="card text-center h-100">
+                <div class="card-body d-flex flex-column justify-content-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-tasks fa-3x text-success mb-3"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Assignments</h5>
+                    <p class="card-text text-muted">Quizzes and results</p>
+                    <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-success mt-auto">
+                        <i class="fas fa-clipboard-list me-2"></i>View Assignments
+                    </a>
                 </div>
             </div>
         </div>

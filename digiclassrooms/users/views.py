@@ -24,6 +24,9 @@ def login_user(request):
             return redirect('home')
     else:
         form = AuthenticationForm()
+        # Add Bootstrap classes to login form fields
+        form.fields['username'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter your username'})
+        form.fields['password'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter your password'})
     return render(request, 'users/login.html', {'form': form})
 
 def logout_user(request):

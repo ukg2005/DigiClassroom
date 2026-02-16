@@ -1,57 +1,72 @@
 {% extends 'users/base.html' %}
+{% block title %}{{ notice.title }} - DigiClassroom{% endblock %}
 
 {% block content %}
-<div class="card mb-4">
-    <div class="card-body">
-        <h3 class="card-title">{{ notice.title }}</h3>
-        <h6 class="card-subtitle mb-2 text-muted">Posted by {{ notice.author.username }} on {{ notice.created_at }}</h6>
-        <p class="card-text">{{ notice.content|linebreaks }}</p>
-        <a href="{% url 'notices_list' notice.classroom.pk %}" class="btn btn-sm btn-outline-secondary">Back to Board</a>
-    </div>
-</div>
-
-<h4>Comments</h4>
-<div class="mb-4">
-    {% for comment in comments %}
-        <div class="card mb-2">
-            <div class="card-body py-2">
-                <p class="mb-1"><strong>{{ comment.author.username }}:</strong> {{ comment.content }}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
-                    <button class="btn btn-sm btn-link p-0 reply-btn" data-comment-id="{{ comment.id }}" data-author="{{ comment.author.username }}">Reply</button>
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card mb-4 shadow-lg">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h4 class="mb-1"><i class="fas fa-bullhorn me-2"></i>{{ notice.title }}</h4>
+                        <small><i class="fas fa-user me-1"></i>{{ notice.author.username }} • <i class="far fa-calendar me-1"></i>{{ notice.created_at|date:"M d, Y" }}</small>
+                    </div>
                 </div>
-                
-                {% if comment.replies.all %}
-                    <div class="mt-2 ps-3 border-start border-2 border-primary">
-                        {% for reply in comment.replies.all %}
-                            <div class="card mb-1 bg-light">
-                                <div class="card-body py-1 px-2">
-                                    <p class="mb-0 small"><strong>{{ reply.author.username }}:</strong> {{ reply.content }}</p>
-                                    <small class="text-muted" style="font-size: 0.7rem;">{{ reply.created_at|timesince }} ago</small>
-                                </div>
-                            </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="notice-content">
+                    {{ notice.content|linebreaks }}
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{% url 'notices_list' notice.classroom.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Notice Board
+                </a>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Discussion ({{ comments|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if comments %}
+                    <div id="comments-container">
+                        {% for comment in comments %}
+                            {% include 'notices/comment_recursive.html' with comment=comment depth=0 %}
                         {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No comments yet. Start the discussion!</p>
                     </div>
                 {% endif %}
             </div>
         </div>
-    {% empty %}
-        <p class="text-muted">No comments yet.</p>
-    {% endfor %}
-</div>
 
-<div class="card">
-    <div class="card-body">
-        <h5 id="form-title">Add a Comment</h5>
-        <form method="post" id="comment-form">
-            {% csrf_token %}
-            <input type="hidden" name="parent_id" id="parent_id" value="">
-            {{ form.content }}
-            <div class="d-flex justify-content-between align-items-center mt-2">
-                <button type="submit" class="btn btn-sm btn-primary">Post Comment</button>
-                <button type="button" class="btn btn-sm btn-secondary d-none" id="cancel-reply">Cancel Reply</button>
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h6 id="form-title" class="mb-0"><i class="fas fa-comment-dots me-2"></i>Add a Comment</h6>
             </div>
-        </form>
+            <div class="card-body">
+                <form method="post" id="comment-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="parent_id" id="parent_id" value="">
+                    <div class="mb-3">
+                        {{ form.content }}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>Post Comment
+                        </button>
+                        <button type="button" class="btn btn-secondary d-none" id="cancel-reply">
+                            <i class="fas fa-times me-1"></i>Cancel Reply
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -67,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const commentId = this.dataset.commentId;
             const author = this.dataset.author;
             parentIdInput.value = commentId;
-            formTitle.textContent = 'Reply to ' + author;
+            formTitle.innerHTML = '<i class="fas fa-reply me-2"></i>Reply to ' + author;
             cancelButton.classList.remove('d-none');
             document.getElementById('id_content').focus();
         });
@@ -75,9 +90,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     cancelButton.addEventListener('click', function() {
         parentIdInput.value = '';
-        formTitle.textContent = 'Add a Comment';
+        formTitle.innerHTML = '<i class="fas fa-comment-dots me-2"></i>Add a Comment';
         cancelButton.classList.add('d-none');
     });
 });
 </script>
+
+{% block extra_css %}
+<style>
+    .notice-content {
+        font-size: 1.05rem;
+        line-height: 1.7;
+    }
+</style>
+{% endblock %}
 {% endblock %}

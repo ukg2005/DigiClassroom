@@ -1,31 +1,68 @@
 {% extends 'users/base.html' %}
+{% block title %}Assignments - {{ classroom.name }}{% endblock %}
 
 {% block content %}
-<div class="row mb-3">
+<div class="row mb-4 align-items-center">
     <div class="col-md-8">
-        <h3>{{ classroom.name }} - Assignments</h3>
+        <h3 class="fw-bold mb-1">
+            <i class="fas fa-clipboard-list text-success me-2"></i>{{ classroom.name }} - Assignments
+        </h3>
+        <p class="text-muted mb-0">Test your knowledge with quizzes</p>
     </div>
     {% if is_teacher %}
     <div class="col-md-4 text-end">
-        <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-primary">+ Create Assignment</a>
+        <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-success">
+            <i class="fas fa-plus-circle me-2"></i>Create Assignment
+        </a>
     </div>
     {% endif %}
 </div>
 
-<div class="list-group">
+<div class="row">
     {% for assignment in assignments %}
-        <a href="{% url 'assignment_detail' assignment.pk %}" class="list-group-item list-group-item-action flex-column align-items-start">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">{{ assignment.title }}</h5>
-                <small>{{ assignment.created_at|date:"M d, Y" }}</small>
-            </div>
-            <p class="mb-1">{{ assignment.questions.count }} Questions</p>
-        </a>
+        <div class="col-md-6 mb-3">
+            <a href="{% url 'assignment_detail' assignment.pk %}" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title fw-bold mb-0">
+                                <i class="fas fa-file-alt text-success me-2"></i>{{ assignment.title }}
+                            </h5>
+                            <span class="badge bg-primary">{{ assignment.questions.count }} Q's</span>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            <i class="far fa-calendar me-1"></i>Created {{ assignment.created_at|date:"M d, Y" }}
+                        </p>
+                    </div>
+                    <div class="card-footer bg-transparent border-top">
+                        <small class="text-primary">
+                            <i class="fas fa-arrow-right me-1"></i>View Details
+                        </small>
+                    </div>
+                </div>
+            </a>
+        </div>
     {% empty %}
-        <div class="alert alert-info">No assignments created yet.</div>
+        <div class="col-12">
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-clipboard fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Assignments Yet</h4>
+                    <p class="text-muted">{% if is_teacher %}Create your first assignment to get started.{% else %}Check back later for new assignments.{% endif %}</p>
+                    {% if is_teacher %}
+                    <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-success btn-lg mt-2">
+                        <i class="fas fa-plus me-2"></i>Create First Assignment
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     {% endfor %}
 </div>
-<div class="mt-3">
-    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">Back to Classroom</a>
+
+<div class="mt-4">
+    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Classroom
+    </a>
 </div>
 {% endblock %}

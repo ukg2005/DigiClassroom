@@ -1,50 +1,101 @@
 {% extends 'users/base.html' %}
+{% block title %}{{ assignment.title }} - DigiClassroom{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row mb-4">
     <div class="col-md-12">
-        <h2>{{ assignment.title }}</h2>
-        <p class="text-muted">Total Questions: {{ questions.count }}</p>
+        <h2 class="fw-bold"><i class="fas fa-clipboard-check text-success me-2"></i>{{ assignment.title }}</h2>
+        <p class="text-muted"><i class="fas fa-list-ol me-2"></i>Total Questions: <strong>{{ questions.count }}</strong></p>
     </div>
 </div>
 
 {% if is_teacher %}
-    <div class="mb-4">
-        <a href="{% url 'add_question' assignment.pk %}" class="btn btn-success">+ Add Question</a>
-        <a href="{% url 'view_submissions' assignment.pk %}" class="btn btn-info">View Submissions</a>
-        <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-secondary">Back to List</a>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3"><i class="fas fa-tools text-primary me-2"></i>Teacher Actions</h5>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{% url 'add_question' assignment.pk %}" class="btn btn-success">
+                    <i class="fas fa-plus-circle me-2"></i>Add Question
+                </a>
+                <a href="{% url 'view_submissions' assignment.pk %}" class="btn btn-info">
+                    <i class="fas fa-users me-2"></i>View Submissions
+                </a>
+                <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                </a>
+            </div>
+        </div>
     </div>
     
-    <h4>Questions Preview:</h4>
-    <ol>
-    {% for q in questions %}
-        <li>
-            <strong>{{ q.text }}</strong>
-            <ul>
-            {% for choice in q.choices.all %}
-                <li {% if choice.is_correct %}class="text-success fw-bold"{% endif %}>{{ choice.text }}</li>
-            {% endfor %}
-            </ul>
-        </li>
-    {% empty %}
-        <p class="text-muted">No questions added yet.</p>
-    {% endfor %}
-    </ol>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-eye me-2"></i>Questions Preview</h5>
+        </div>
+        <div class="card-body">
+            {% if questions %}
+                <ol class="list-group list-group-numbered">
+                {% for q in questions %}
+                    <li class="list-group-item">
+                        <div class="fw-bold mb-2">{{ q.text }}</div>
+                        <ul class="list-unstyled ms-3">
+                        {% for choice in q.choices.all %}
+                            <li class="{% if choice.is_correct %}text-success fw-bold{% else %}text-muted{% endif %} mb-1">
+                                {% if choice.is_correct %}
+                                    <i class="fas fa-check-circle me-2"></i>
+                                {% else %}
+                                    <i class="far fa-circle me-2"></i>
+                                {% endif %}
+                                {{ choice.text }}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
+                </ol>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No questions added yet. Click "Add Question" to create your first question.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 
 {% else %}
     {% if submission %}
-        <div class="alert alert-success">
-            <h4>You have submitted this assignment.</h4>
-            <p>Score: {{ submission.score }}/{{ questions.count }}</p>
-            <a href="{% url 'submission_detail' submission.pk %}" class="btn btn-primary">View Result & Feedback</a>
+        <div class="card border-success">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h4 class="fw-bold">Assignment Submitted</h4>
+                <p class="text-muted mb-3">Great job! You've completed this assignment.</p>
+                <div class="display-4 fw-bold text-success mb-3">{{ submission.score }}/{{ questions.count }}</div>
+                <a href="{% url 'submission_detail' submission.pk %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-poll me-2"></i>View Result & Feedback
+                </a>
+            </div>
         </div>
     {% else %}
         {% if questions.count > 0 %}
-            <a href="{% url 'take_assignment' assignment.pk %}" class="btn btn-lg btn-success">Start Quiz</a>
+            <div class="card border-primary">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-pencil-alt fa-4x text-primary mb-3"></i>
+                    <h4 class="fw-bold">Ready to Start?</h4>
+                    <p class="text-muted mb-3">This quiz has {{ questions.count }} question{{ questions.count|pluralize }}. Good luck!</p>
+                    <a href="{% url 'take_assignment' assignment.pk %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-play me-2"></i>Start Quiz
+                    </a>
+                </div>
+            </div>
         {% else %}
-            <div class="alert alert-warning">No questions available yet.</div>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>No questions available yet. Please check back later.
+            </div>
         {% endif %}
     {% endif %}
-    <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-secondary mt-3">Back to List</a>
+    <div class="mt-4">
+        <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to List
+        </a>
+    </div>
 {% endif %}
 {% endblock %}

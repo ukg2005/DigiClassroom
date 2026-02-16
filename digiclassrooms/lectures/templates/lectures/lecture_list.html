@@ -1,13 +1,19 @@
 {% extends 'users/base.html' %}
+{% block title %}Lectures - {{ classroom.name }}{% endblock %}
 
 {% block content %}
-<div class="row mb-3">
+<div class="row mb-4 align-items-center">
     <div class="col-md-8">
-        <h3>{{ classroom.name }} - Lectures</h3>
+        <h3 class="fw-bold mb-1">
+            <i class="fas fa-video text-danger me-2"></i>{{ classroom.name }} - Lectures
+        </h3>
+        <p class="text-muted mb-0">Watch video lessons and ask questions</p>
     </div>
     {% if is_teacher %}
     <div class="col-md-4 text-end">
-        <a href="{% url 'lecture_create' classroom.pk %}" class="btn btn-primary">+ Add Lecture</a>
+        <a href="{% url 'lecture_create' classroom.pk %}" class="btn btn-danger">
+            <i class="fas fa-plus-circle me-2"></i>Add Lecture
+        </a>
     </div>
     {% endif %}
 </div>
@@ -16,26 +22,42 @@
     {% for lecture in lectures %}
         <div class="col-md-6 mb-4">
             <div class="card h-100">
-                {% if lecture.get_video_id %}
-                <div class="ratio ratio-16x9 mb-2">
-                    <iframe src="https://www.youtube-nocookie.com/embed/{{ lecture.get_video_id }}?rel=0" title="{{ lecture.title }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                </div>
-                {% else %}
-                <div class="alert alert-warning m-2 mb-0">
-                    <small>Invalid YouTube URL</small>
-                </div>
-                {% endif %}
                 <div class="card-body">
-                    <h5 class="card-title">{{ lecture.title }}</h5>
-                    <a href="{% url 'lecture_detail' lecture.pk %}" class="btn btn-primary w-100">Open & Discuss</a>
+                    <h5 class="card-title fw-bold mb-3">
+                        <i class="fas fa-play-circle text-danger me-2"></i>{{ lecture.title }}
+                    </h5>
+                    <div class="mb-3">
+                        <a href="{{ lecture.youtube_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger w-100 mb-2">
+                            <i class="fab fa-youtube me-2"></i>Watch on YouTube
+                        </a>
+                    </div>
+                    <a href="{% url 'lecture_detail' lecture.pk %}" class="btn btn-primary w-100">
+                        <i class="fas fa-comments me-2"></i>View Discussion
+                    </a>
                 </div>
             </div>
         </div>
     {% empty %}
-        <div class="col-12"><div class="alert alert-info">No lectures added yet.</div></div>
+        <div class="col-12">
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-video fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Lectures Yet</h4>
+                    <p class="text-muted">{% if is_teacher %}Add your first lecture to get started.{% else %}Check back later for new video lessons.{% endif %}</p>
+                    {% if is_teacher %}
+                    <a href="{% url 'lecture_create' classroom.pk %}" class="btn btn-danger btn-lg mt-2">
+                        <i class="fas fa-plus me-2"></i>Add First Lecture
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     {% endfor %}
 </div>
-<div class="mt-3">
-    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">Back to Classroom</a>
+
+<div class="mt-4">
+    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Classroom
+    </a>
 </div>
 {% endblock %}

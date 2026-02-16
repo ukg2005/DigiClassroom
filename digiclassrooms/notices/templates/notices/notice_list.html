@@ -1,32 +1,83 @@
 {% extends 'users/base.html' %}
+{% block title %}Notice Board - {{ classroom.name }}{% endblock %}
 
 {% block content %}
-<div class="row mb-3">
+<div class="row mb-4 align-items-center">
     <div class="col-md-8">
-        <h3>{{ classroom.name }} - Notice Board</h3>
+        <h3 class="fw-bold mb-1">
+            <i class="fas fa-bullhorn text-primary me-2"></i>{{ classroom.name }} - Notice Board
+        </h3>
+        <p class="text-muted mb-0">Stay updated with announcements and discussions</p>
     </div>
     {% if is_teacher %}
     <div class="col-md-4 text-end">
-        <a href="{% url 'notice_create' classroom.pk %}" class="btn btn-primary">+ Post Notice</a>
+        <a href="{% url 'notice_create' classroom.pk %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Post Notice
+        </a>
     </div>
     {% endif %}
 </div>
 
-<div class="list-group">
-    {% for notice in notices %}
-        <a href="{% url 'notice_detail' notice.pk %}" class="list-group-item list-group-item-action flex-column align-items-start">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">{{ notice.title }}</h5>
-                <small>{{ notice.created_at|date:"M d, Y" }}</small>
+<div class="row">
+    <div class="col-12">
+        {% if notices %}
+            {% for notice in notices %}
+                <a href="{% url 'notice_detail' notice.pk %}" class="text-decoration-none">
+                    <div class="card mb-3 notice-card">
+                        <div class="card-body">
+                            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                                <h5 class="card-title fw-bold mb-0">
+                                    <i class="fas fa-file-alt text-primary me-2"></i>{{ notice.title }}
+                                </h5>
+                                <span class="badge bg-primary">
+                                    <i class="far fa-calendar me-1"></i>{{ notice.created_at|date:"M d, Y" }}
+                                </span>
+                            </div>
+                            <p class="card-text text-muted mb-2">{{ notice.content|truncatewords:30 }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>Posted by <strong>{{ notice.author.username }}</strong>
+                            </small>
+                        </div>
+                        <div class="card-footer bg-transparent border-top">
+                            <small class="text-primary">
+                                <i class="fas fa-arrow-right me-1"></i>Read more & comment
+                            </small>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-clipboard fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Notices Posted</h4>
+                    <p class="text-muted">{% if is_teacher %}Post your first notice to keep students informed.{% else %}Check back later for announcements.{% endif %}</p>
+                    {% if is_teacher %}
+                    <a href="{% url 'notice_create' classroom.pk %}" class="btn btn-primary btn-lg mt-2">
+                        <i class="fas fa-plus me-2"></i>Post First Notice
+                    </a>
+                    {% endif %}
+                </div>
             </div>
-            <p class="mb-1">{{ notice.content|truncatewords:30 }}</p>
-            <small>By {{ notice.author.username }}</small>
-        </a>
-    {% empty %}
-        <div class="alert alert-info">No notices posted yet.</div>
-    {% endfor %}
+        {% endif %}
+    </div>
 </div>
-<div class="mt-3">
-    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">Back to Classroom</a>
+
+<div class="mt-4">
+    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Classroom
+    </a>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notice-card {
+        transition: all 0.2s;
+    }
+    .notice-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+</style>
 {% endblock %}

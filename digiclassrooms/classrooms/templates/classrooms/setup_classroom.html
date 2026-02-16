@@ -1,24 +1,38 @@
 {% extends 'users/base.html' %}
+{% block title %}Setup Classroom - DigiClassroom{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">Setup Your Classroom</div>
-            <div class="card-body">
+        <div class="card shadow-lg">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white;">
+                <h5 class="mb-0"><i class="fas fa-school me-2"></i>Setup Your Classroom</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-chalkboard-teacher fa-3x text-primary mb-3"></i>
+                    <p class="text-muted">Create your virtual classroom to start teaching</p>
+                </div>
+                
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label class="form-label">Classroom Name</label>
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-tag me-2"></i>Classroom Name
+                        </label>
                         {{ form.name.errors }}
-                        <input type="text" name="name" class="form-control" value="{{ form.name.value|default:'' }}" required>
+                        <input type="text" name="name" class="form-control" value="{{ form.name.value|default:'' }}" placeholder="e.g., Physics 101" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description (Optional)</label>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-align-left me-2"></i>Description <small class="text-muted">(Optional)</small>
+                        </label>
                         {{ form.description.errors }}
-                        <textarea name="description" class="form-control">{{ form.description.value|default:'' }}</textarea>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Brief description of your classroom">{{ form.description.value|default:'' }}</textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Create Classroom</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-plus-circle me-2"></i>Create Classroom
+                    </button>
                 </form>
             </div>
         </div>

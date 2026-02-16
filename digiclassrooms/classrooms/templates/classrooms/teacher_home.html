@@ -1,62 +1,91 @@
 {% extends 'users/base.html' %}
+{% block title %}Teacher Dashboard - DigiClassroom{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-md-12 text-center mb-4">
-        <h2>Teacher Dashboard</h2>
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold"><i class="fas fa-chalkboard-teacher text-primary me-2"></i>Teacher Dashboard</h2>
+        <p class="text-muted">Manage your classroom and engage with students</p>
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-4">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">My Classroom</div>
+        <div class="card mb-4">
+            <div class="card-header bg-gradient" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white;">
+                <i class="fas fa-school me-2"></i>My Classroom
+            </div>
             <div class="card-body">
-                <h5 class="card-title">{{ classroom.name }}</h5>
-                <p class="card-text">{{ classroom.description }}</p>
-                <div class="d-grid gap-2">
-                    <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-outline-primary">Notice Board</a>
-                    <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-outline-primary">Lectures</a>
-                    <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-outline-primary">Assignments</a>
+                <h5 class="card-title fw-bold">{{ classroom.name }}</h5>
+                <p class="card-text text-muted">{{ classroom.description }}</p>
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-bullhorn me-2"></i>Notice Board
+                    </a>
+                    <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-video me-2"></i>Lectures
+                    </a>
+                    <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-tasks me-2"></i>Assignments
+                    </a>
                 </div>
             </div>
         </div>
     </div>
     
     <div class="col-md-8">
-        <h4>Recent Activity</h4>
+        <h4 class="fw-bold mb-3"><i class="fas fa-chart-line text-secondary me-2"></i>Recent Activity</h4>
         <div class="row">
             <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header">Latest Notices</div>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-bell me-2"></i>Latest Notices
+                    </div>
                     <ul class="list-group list-group-flush">
                         {% for notice in notices %}
                             <li class="list-group-item">
-                                <a href="{% url 'notice_detail' notice.pk %}">{{ notice.title }}</a>
+                                <a href="{% url 'notice_detail' notice.pk %}" class="text-decoration-none">
+                                    <i class="fas fa-file-alt me-2 text-primary"></i>{{ notice.title }}
+                                </a>
+                                <br><small class="text-muted">{{ notice.created_at|timesince }} ago</small>
                             </li>
                         {% empty %}
-                            <li class="list-group-item">No notices yet.</li>
+                            <li class="list-group-item text-muted text-center">
+                                <i class="fas fa-inbox me-2"></i>No notices yet.
+                            </li>
                         {% endfor %}
                     </ul>
                     <div class="card-body">
-                        <a href="{% url 'notice_create' classroom.pk %}" class="btn btn-sm btn-primary">+ Post Notice</a>
+                        <a href="{% url 'notice_create' classroom.pk %}" class="btn btn-sm btn-success w-100">
+                            <i class="fas fa-plus me-2"></i>Post Notice
+                        </a>
                     </div>
                 </div>
             </div>
             
             <div class="col-md-6">
-                 <div class="card mb-3">
-                    <div class="card-header">Latest Assignments</div>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-clipboard-list me-2"></i>Latest Assignments
+                    </div>
                     <ul class="list-group list-group-flush">
                         {% for assignment in assignments %}
                             <li class="list-group-item">
-                                <a href="{% url 'assignment_detail' assignment.pk %}">{{ assignment.title }}</a>
+                                <a href="{% url 'assignment_detail' assignment.pk %}" class="text-decoration-none">
+                                    <i class="fas fa-file-alt me-2 text-success"></i>{{ assignment.title }}
+                                </a>
+                                <br><small class="text-muted">{{ assignment.created_at|timesince }} ago</small>
                             </li>
                         {% empty %}
-                            <li class="list-group-item">No assignments yet.</li>
+                            <li class="list-group-item text-muted text-center">
+                                <i class="fas fa-inbox me-2"></i>No assignments yet.
+                            </li>
                         {% endfor %}
                     </ul>
-                     <div class="card-body">
-                        <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-sm btn-primary">+ Create Assignment</a>
+                    <div class="card-body">
+                        <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-sm btn-success w-100">
+                            <i class="fas fa-plus me-2"></i>Create Assignment
+                        </a>
                     </div>
                 </div>
             </div>

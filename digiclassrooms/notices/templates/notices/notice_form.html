@@ -1,18 +1,48 @@
 {% extends 'users/base.html' %}
+{% block title %}Post Notice - DigiClassroom{% endblock %}
 
 {% block content %}
-<h3>Post a New Notice</h3>
-<form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-        <label>Title</label>
-        <input type="text" name="title" class="form-control" required>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white;">
+                <h5 class="mb-0"><i class="fas fa-bullhorn me-2"></i>Post a New Notice</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                    <p class="text-muted">Share important announcements with your students</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-heading me-2"></i>Notice Title
+                        </label>
+                        <input type="text" name="title" class="form-control form-control-lg" placeholder="e.g., Exam Schedule Update" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-align-left me-2"></i>Content
+                        </label>
+                        <textarea name="content" class="form-control" rows="8" placeholder="Write your announcement here..." required></textarea>
+                        <div class="form-text">Provide all necessary details for your students</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>Post Notice
+                        </button>
+                        <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label>Content</label>
-        <textarea name="content" class="form-control" rows="5" required></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">Post Notice</button>
-    <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-secondary">Cancel</a>
-</form>
+</div>
 {% endblock %}

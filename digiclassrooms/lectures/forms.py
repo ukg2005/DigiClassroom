@@ -10,7 +10,7 @@ class LectureForm(forms.ModelForm):
                 'placeholder': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
                 'class': 'form-control'
             }),
-            'title': forms.TextInput(attrs={'class': 'form-control'})
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter lecture title'})
         }
         help_texts = {
             'youtube_link': 'Paste any YouTube video URL. Supported formats: youtube.com/watch?v=..., youtu.be/..., youtube.com/embed/...'
@@ -28,5 +28,8 @@ class LectureCommentForm(forms.ModelForm):
         model = LectureComment
         fields = ['content']
         widgets = {
-            'content': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Ask a doubt or comment...'})
+            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Ask a question or leave a comment...', 'class': 'form-control'})
+        }
+        labels = {
+            'content': ''
         }

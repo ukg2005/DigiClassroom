@@ -1,51 +1,79 @@
 {% extends 'users/base.html' %}
+{% block title %}Student Dashboard - DigiClassroom{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-4 align-items-center">
     <div class="col-md-8">
-        <h2>Student Dashboard</h2>
+        <h2 class="fw-bold mb-1"><i class="fas fa-book-reader text-primary me-2"></i>My Classes</h2>
+        <p class="text-muted">Welcome back, {{ user.username }}!</p>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{% url 'enroll_classroom' %}" class="btn btn-success">Find Classes to Join</a>
+        <a href="{% url 'enroll_classroom' %}" class="btn btn-success">
+            <i class="fas fa-plus-circle me-2"></i>Find Classes to Join
+        </a>
     </div>
 </div>
 
 <div class="row">
     {% for classroom in enrolled_classrooms %}
-        <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ classroom.name }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">Teacher: {{ classroom.teacher.username }}</h6>
-                    <p class="card-text">{{ classroom.description|truncatewords:20 }}</p>
-                    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-primary w-100">Enter Classroom</a>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        <h5 class="card-title fw-bold mb-2">
+                            <i class="fas fa-chalkboard text-primary me-2"></i>{{ classroom.name }}
+                        </h5>
+                        <h6 class="card-subtitle text-muted">
+                            <i class="fas fa-user-tie me-1"></i>{{ classroom.teacher.username }}
+                        </h6>
+                    </div>
+                    <p class="card-text flex-grow-1 text-muted">{{ classroom.description|truncatewords:20 }}</p>
+                    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-primary w-100">
+                        <i class="fas fa-door-open me-2"></i>Enter Classroom
+                    </a>
                 </div>
             </div>
         </div>
     {% empty %}
         <div class="col-12">
-            <div class="alert alert-info">You are not enrolled in any classrooms yet.</div>
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Classes Yet</h4>
+                    <p class="text-muted mb-3">You haven't enrolled in any classrooms yet.</p>
+                    <a href="{% url 'enroll_classroom' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-search me-2"></i>Browse Available Classes
+                    </a>
+                </div>
+            </div>
         </div>
     {% endfor %}
 </div>
 
 {% if available_classrooms %}
-<h4 class="mt-4">Available Classes</h4>
-<div class="row">
-    {% for classroom in available_classrooms %}
-        <div class="col-md-3">
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h6 class="card-title">{{ classroom.name }}</h6>
-                    <p class="small">{{ classroom.teacher.username }}</p>
-                    <form method="post" action="{% url 'enroll_classroom' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="classroom_id" value="{{ classroom.pk }}">
-                        <button type="submit" class="btn btn-sm btn-outline-success w-100">Enroll</button>
-                    </form>
+<div class="mt-5">
+    <h4 class="fw-bold mb-3"><i class="fas fa-compass text-secondary me-2"></i>Available Classes</h4>
+    <div class="row">
+        {% for classroom in available_classrooms %}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">{{ classroom.name }}</h6>
+                        <p class="card-text small text-muted">
+                            <i class="fas fa-user me-1"></i>{{ classroom.teacher.username }}
+                        </p>
+                        <form method="post" action="{% url 'enroll_classroom' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="classroom_id" value="{{ classroom.pk }}">
+                            <button type="submit" class="btn btn-sm btn-outline-success w-100">
+                                <i class="fas fa-user-plus me-1"></i>Enroll
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    {% endfor %}
+        {% endfor %}
+    </div>
 </div>
 {% endif %}
 {% endblock %}
