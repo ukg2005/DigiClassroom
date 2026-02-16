@@ -28,8 +28,9 @@ class Command(BaseCommand):
         if created:
             teacher.set_password('password123')
             teacher.save()
-            teacher.profile.is_teacher = True
-            teacher.profile.save()
+            profile, _ = Profile.objects.get_or_create(user=teacher)
+            profile.is_teacher = True
+            profile.save()
             self.stdout.write(self.style.SUCCESS(f'✓ Created teacher: {teacher.username}'))
         else:
             self.stdout.write(f'  Teacher {teacher.username} already exists')
@@ -54,8 +55,9 @@ class Command(BaseCommand):
             if created:
                 student.set_password('password123')
                 student.save()
-                student.profile.is_teacher = False
-                student.profile.save()
+                profile, _ = Profile.objects.get_or_create(user=student)
+                profile.is_teacher = False
+                profile.save()
                 self.stdout.write(self.style.SUCCESS(f'✓ Created student: {student.username}'))
             else:
                 self.stdout.write(f'  Student {student.username} already exists')
@@ -266,13 +268,14 @@ class Command(BaseCommand):
                         for question in assignment.questions.all():
                             # Randomly pick an answer (first choice for demo)
                             choice = question.choices.first()
-                            StudentAnswer.objects.create(
-                                submission=submission,
-                                question=question,
-                                choice=choice
-                            )
-                            if choice.is_correct:
-                                score += 1
+                            if choice:
+                                StudentAnswer.objects.create(
+                                    submission=submission,
+                                    question=question,
+                                    choice=choice
+                                )
+                                if choice.is_correct:
+                                    score += 1
                         
                         submission.score = score
                         submission.teacher_feedback = "Good effort! Keep practicing."
