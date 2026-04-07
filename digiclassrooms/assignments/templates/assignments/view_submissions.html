@@ -4,6 +4,11 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-12">
+        <div class="mb-3">
+            <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Assignment
+            </a>
+        </div>
         <h3 class="fw-bold">
             <i class="fas fa-users me-2 text-primary"></i>Submissions for: {{ assignment.title }}
         </h3>
@@ -60,9 +65,4 @@
     </div>
 </div>
 
-<div class="mt-4">
-    <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left me-2"></i>Back to Assignment
-    </a>
-</div>
 {% endblock %}

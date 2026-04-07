@@ -2,8 +2,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
 from .forms import UserRegistrationForm
 
+@never_cache
+@ensure_csrf_cookie
 def register_user(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -15,6 +19,8 @@ def register_user(request):
         form = UserRegistrationForm()
     return render(request, 'users/register.html', {'form': form})
 
+@never_cache
+@ensure_csrf_cookie
 def login_user(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -24,9 +30,10 @@ def login_user(request):
             return redirect('home')
     else:
         form = AuthenticationForm()
-        # Add Bootstrap classes to login form fields
-        form.fields['username'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter your username'})
-        form.fields['password'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter your password'})
+
+    # Add Bootstrap classes to login form fields
+    form.fields['username'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter your username'})
+    form.fields['password'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter your password'})
     return render(request, 'users/login.html', {'form': form})
 
 def logout_user(request):

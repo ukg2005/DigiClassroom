@@ -3,19 +3,22 @@
 
 {% block content %}
 <div class="row mb-4 align-items-center">
-    <div class="col-md-8">
+    <div class="col-md-6">
         <h3 class="fw-bold mb-1">
             <i class="fas fa-clipboard-list text-success me-2"></i>{{ classroom.name }} - Assignments
         </h3>
         <p class="text-muted mb-0">Test your knowledge with quizzes</p>
     </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-2"></i>Back to Classroom
+        </a>
     {% if is_teacher %}
-    <div class="col-md-4 text-end">
         <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-success">
             <i class="fas fa-plus-circle me-2"></i>Create Assignment
         </a>
-    </div>
     {% endif %}
+    </div>
 </div>
 
 <div class="row">
@@ -33,6 +36,19 @@
                         <p class="text-muted small mb-0">
                             <i class="far fa-calendar me-1"></i>Created {{ assignment.created_at|date:"M d, Y" }}
                         </p>
+                        {% if is_teacher %}
+                        <div class="mt-3 d-flex gap-2">
+                            <a href="{% url 'edit_assignment' assignment.pk %}" class="btn btn-sm btn-outline-warning" onclick="event.preventDefault(); event.stopPropagation(); window.location.href=this.href;">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </a>
+                            <form method="POST" action="{% url 'delete_assignment' assignment.pk %}" onsubmit="event.preventDefault(); event.stopPropagation(); if (confirm('Delete this assignment?')) { this.submit(); }">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash me-1"></i>Delete
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="card-footer bg-transparent border-top">
                         <small class="text-primary">
@@ -60,9 +76,4 @@
     {% endfor %}
 </div>
 
-<div class="mt-4">
-    <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left me-2"></i>Back to Classroom
-    </a>
-</div>
 {% endblock %}

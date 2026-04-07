@@ -4,6 +4,18 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-10">
+        <div class="mb-3">
+            {% if is_teacher %}
+                <a href="{% url 'view_submissions' submission.assignment.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Submissions
+                </a>
+            {% else %}
+                <a href="{% url 'assignment_detail' submission.assignment.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Assignment
+                </a>
+            {% endif %}
+        </div>
+
         <div class="card mb-4">
             <div class="card-header" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white;">
                 <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Submission Details</h5>
@@ -103,17 +115,6 @@
             </div>
         </div>
 
-        <div class="mt-4">
-            {% if is_teacher %}
-                <a href="{% url 'view_submissions' submission.assignment.pk %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Submissions
-                </a>
-            {% else %}
-                <a href="{% url 'assignment_detail' submission.assignment.pk %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Assignment
-                </a>
-            {% endif %}
-        </div>
     </div>
 </div>
 {% endblock %}
