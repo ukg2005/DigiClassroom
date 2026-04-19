@@ -9,7 +9,6 @@ The platform distinguishes itself with clean role-separation (Teacher/Student), 
 ## Documentation
 
 - [Installation & setup](INSTALLATION.md) — environment setup, migrations, running the server
-- [Email configuration](EMAIL_SETUP.md) — SMTP/console backend configuration for notifications
 - [Features](FEATURES.md) — user-facing feature overview
 - [Implementation notes](IMPLEMENTATION.md) — app structure, design notes, and development details
 
