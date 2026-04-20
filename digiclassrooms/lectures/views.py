@@ -5,11 +5,15 @@ from classrooms.models import Classroom
 from .models import Lecture, LectureComment
 from .forms import LectureForm, LectureCommentForm
 
+
+def _is_admin_user(user):
+    return bool(user and user.is_authenticated and (user.is_superuser or (hasattr(user, 'profile') and user.profile.is_admin)))
+
 @login_required(login_url='login')
 def lecture_list(request, classroom_pk):
     classroom = get_object_or_404(Classroom, pk=classroom_pk)
     lectures = classroom.lectures.all().order_by('-created_at')
-    is_teacher = request.user == classroom.teacher
+    is_teacher = classroom.is_teacher(request.user)
     return render(request, 'lectures/lecture_list.html', {
         'classroom': classroom, 'lectures': lectures, 'is_teacher': is_teacher
     })
@@ -17,7 +21,7 @@ def lecture_list(request, classroom_pk):
 @login_required(login_url='login')
 def lecture_create(request, classroom_pk):
     classroom = get_object_or_404(Classroom, pk=classroom_pk)
-    if request.user != classroom.teacher:
+    if not classroom.is_teacher(request.user):
         return redirect('lectures_list', classroom_pk=classroom.pk)
     
     if request.method == 'POST':
@@ -35,9 +39,19 @@ def lecture_create(request, classroom_pk):
 def lecture_detail(request, pk):
     lecture = get_object_or_404(Lecture, pk=pk)
     comments = lecture.comments.filter(parent__isnull=True).order_by('created_at') # pyright: ignore[reportAttributeAccessIssue]
+    is_teacher = lecture.classroom.is_teacher(request.user)
+    is_student = lecture.classroom.students.filter(pk=request.user.pk).exists()
+    is_admin = _is_admin_user(request.user)
+    can_interact = is_teacher or is_student
+
+    if not (is_teacher or is_student or is_admin):
+        return redirect('home')
     
     if request.method == 'POST':
-        if lecture.is_thread_locked and request.user != lecture.classroom.teacher:
+        if not can_interact:
+            messages.error(request, 'Admins cannot participate in class discussions.')
+            return redirect('lecture_detail', pk=pk)
+        if lecture.is_thread_locked and not lecture.classroom.is_teacher(request.user):
             messages.error(request, 'This discussion is locked by the teacher.')
             return redirect('lecture_detail', pk=pk)
 
@@ -54,18 +68,19 @@ def lecture_detail(request, pk):
     else:
         form = LectureCommentForm()
         
-    # Check if user is teacher
-    is_teacher = request.user == lecture.classroom.teacher
-    
     return render(request, 'lectures/lecture_detail.html', {
-        'lecture': lecture, 'comments': comments, 'form': form, 'is_teacher': is_teacher
+        'lecture': lecture,
+        'comments': comments,
+        'form': form,
+        'is_teacher': is_teacher,
+        'can_interact': can_interact,
     })
 
 
 @login_required(login_url='login')
 def toggle_lecture_thread_lock(request, pk):
     lecture = get_object_or_404(Lecture, pk=pk)
-    if request.user != lecture.classroom.teacher or request.method != 'POST':
+    if not lecture.classroom.is_teacher(request.user) or request.method != 'POST':
         return redirect('lecture_detail', pk=pk)
 
     lecture.is_thread_locked = not lecture.is_thread_locked
@@ -80,7 +95,7 @@ def edit_lecture_comment(request, comment_id):
     lecture = comment.lecture
     
     # Check permission: only comment author or teacher can edit
-    if request.user != comment.author and request.user != lecture.classroom.teacher:
+    if request.user != comment.author and not lecture.classroom.is_teacher(request.user):
         return redirect('lecture_detail', pk=lecture.pk)
     
     if request.method == 'POST':
@@ -106,7 +121,7 @@ def delete_lecture_comment(request, comment_id):
     lecture = comment.lecture
     
     # Check permission: only comment author or teacher can delete
-    if request.user != comment.author and request.user != lecture.classroom.teacher:
+    if request.user != comment.author and not lecture.classroom.is_teacher(request.user):
         return redirect('lecture_detail', pk=lecture.pk)
     
     if request.method == 'POST':
@@ -121,7 +136,7 @@ def edit_lecture(request, pk):
     lecture = get_object_or_404(Lecture, pk=pk)
     
     # Check permission: only teacher can edit
-    if request.user != lecture.classroom.teacher:
+    if not lecture.classroom.is_teacher(request.user):
         return redirect('lecture_detail', pk=pk)
     
     if request.method == 'POST':
@@ -148,7 +163,7 @@ def delete_lecture(request, pk):
     classroom = lecture.classroom
     
     # Check permission: only teacher can delete
-    if request.user != classroom.teacher:
+    if not classroom.is_teacher(request.user):
         return redirect('lecture_detail', pk=pk)
     
     if request.method == 'POST':

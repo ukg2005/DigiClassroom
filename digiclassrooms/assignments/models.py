@@ -7,6 +7,13 @@ if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
 class Assignment(models.Model):
+    ASSIGNMENT_TYPE_QUIZ = 'quiz'
+    ASSIGNMENT_TYPE_QNA = 'qna'
+    ASSIGNMENT_TYPE_CHOICES = [
+        (ASSIGNMENT_TYPE_QUIZ, 'Quiz'),
+        (ASSIGNMENT_TYPE_QNA, 'Q&A'),
+    ]
+
     LATE_POLICY_ALLOW = 'allow'
     LATE_POLICY_DENY = 'deny'
     LATE_POLICY_PENALTY = 'penalty'
@@ -18,6 +25,8 @@ class Assignment(models.Model):
 
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='assignments')
     title = models.CharField(max_length=200)
+    assignment_type = models.CharField(max_length=10, choices=ASSIGNMENT_TYPE_CHOICES, default=ASSIGNMENT_TYPE_QUIZ)
+    prompt = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     due_date = models.DateTimeField(null=True, blank=True)
@@ -33,8 +42,20 @@ class Assignment(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def is_quiz(self):
+        return self.assignment_type == self.ASSIGNMENT_TYPE_QUIZ
+
 class Question(models.Model):
+    QUESTION_TYPE_MCQ = 'mcq'
+    QUESTION_TYPE_QNA = 'qna'
+    QUESTION_TYPE_CHOICES = [
+        (QUESTION_TYPE_MCQ, 'Multiple Choice'),
+        (QUESTION_TYPE_QNA, 'Q&A'),
+    ]
+
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='questions')
+    question_type = models.CharField(max_length=10, choices=QUESTION_TYPE_CHOICES, default=QUESTION_TYPE_MCQ)
     text = models.CharField(max_length=500)
     
     if TYPE_CHECKING:
@@ -58,6 +79,7 @@ class Submission(models.Model):
     attempt_number = models.PositiveIntegerField(default=1)
     score = models.IntegerField(default=0)
     teacher_feedback = models.TextField(blank=True, null=True)
+    text_response = models.TextField(blank=True)
     is_late = models.BooleanField(default=False)
     late_penalty_percent = models.PositiveIntegerField(default=0)
     submitted_at = models.DateTimeField(auto_now_add=True)
@@ -72,7 +94,8 @@ class Submission(models.Model):
 class StudentAnswer(models.Model):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='answers')
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
+    choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=True, blank=True)
+    text_response = models.TextField(blank=True)
 
 
 class SubmissionDraft(models.Model):
@@ -83,3 +106,18 @@ class SubmissionDraft(models.Model):
 
     class Meta:
         unique_together = ('assignment', 'student')
+
+
+class DeadlineEvent(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='deadline_events')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    due_date = models.DateTimeField()
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_deadline_events')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['due_date', 'created_at']
+
+    def __str__(self):
+        return f'{self.title} - {self.classroom.name}'

@@ -1,12 +1,14 @@
 from django import forms
-from .models import Assignment
+from .models import Assignment, DeadlineEvent
 
 class AssignmentForm(forms.ModelForm):
     class Meta:
         model = Assignment
-        fields = ['title', 'due_date', 'late_submission_policy', 'late_penalty_percent', 'max_attempts']
+        fields = ['title', 'assignment_type', 'prompt', 'due_date', 'late_submission_policy', 'late_penalty_percent', 'max_attempts']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Chapter 1 Quiz'}),
+            'assignment_type': forms.Select(attrs={'class': 'form-select'}),
+            'prompt': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'For Q&A, provide instructions or the main question prompt'}),
             'due_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'late_submission_policy': forms.Select(attrs={'class': 'form-select'}),
             'late_penalty_percent': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100}),
@@ -15,13 +17,17 @@ class AssignmentForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
+        assignment_type = cleaned.get('assignment_type')
         policy = cleaned.get('late_submission_policy')
         penalty = cleaned.get('late_penalty_percent') or 0
 
-        if policy == Assignment.LATE_POLICY_PENALTY and penalty <= 0:
+        if assignment_type == Assignment.ASSIGNMENT_TYPE_QUIZ and policy == Assignment.LATE_POLICY_PENALTY and penalty <= 0:
             self.add_error('late_penalty_percent', 'Set a positive late penalty percentage.')
 
-        if policy != Assignment.LATE_POLICY_PENALTY:
+        if assignment_type != Assignment.ASSIGNMENT_TYPE_QUIZ:
+            cleaned['late_penalty_percent'] = 0
+            cleaned['max_attempts'] = 1
+        elif policy != Assignment.LATE_POLICY_PENALTY:
             cleaned['late_penalty_percent'] = 0
 
         return cleaned
@@ -56,3 +62,14 @@ class QuestionForm(forms.Form):
         choices=[('1', 'Option 1'), ('2', 'Option 2'), ('3', 'Option 3'), ('4', 'Option 4')], 
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
     )
+
+
+class DeadlineEventForm(forms.ModelForm):
+    class Meta:
+        model = DeadlineEvent
+        fields = ['title', 'description', 'due_date']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'due_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }

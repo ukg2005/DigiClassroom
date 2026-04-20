@@ -13,6 +13,9 @@
         <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-outline-secondary me-2">
             <i class="fas fa-arrow-left me-2"></i>Back to Classroom
         </a>
+        <a href="{% url 'classroom_calendar' classroom.pk %}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-calendar-alt me-2"></i>Calendar
+        </a>
     {% if is_teacher %}
         <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-success">
             <i class="fas fa-plus-circle me-2"></i>Create Assignment
@@ -31,11 +34,23 @@
                             <h5 class="card-title fw-bold mb-0">
                                 <i class="fas fa-file-alt text-success me-2"></i>{{ assignment.title }}
                             </h5>
-                            <span class="badge bg-primary">{{ assignment.questions.count }} Q's</span>
+                            <div>
+                                <span class="badge {% if assignment.is_quiz %}bg-primary{% else %}bg-secondary{% endif %}">{{ assignment.get_assignment_type_display }}</span>
+                                <span class="badge bg-info ms-1">{{ assignment.questions.count }} prompts</span>
+                            </div>
                         </div>
+                        {% if assignment.prompt %}
+                            <div class="alert alert-light border mt-3 mb-2 py-2">
+                                <div class="small text-muted mb-1"><i class="fas fa-align-left me-1"></i>Prompt</div>
+                                <div class="fw-semibold">{{ assignment.prompt }}</div>
+                            </div>
+                        {% endif %}
                         <p class="text-muted small mb-0">
                             <i class="far fa-calendar me-1"></i>Created {{ assignment.created_at|date:"M d, Y" }}
                         </p>
+                        {% if assignment.due_date %}
+                            <p class="text-muted small mb-0"><i class="far fa-clock me-1"></i>Due {{ assignment.due_date|date:"M d, Y H:i" }}</p>
+                        {% endif %}
                         {% if is_teacher %}
                         <div class="mt-3 d-flex gap-2">
                             <a href="{% url 'edit_assignment' assignment.pk %}" class="btn btn-sm btn-outline-warning" onclick="event.preventDefault(); event.stopPropagation(); window.location.href=this.href;">

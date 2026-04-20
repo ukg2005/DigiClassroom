@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.models import User
 from .models import Classroom
 
 class ClassroomForm(forms.ModelForm):
@@ -8,6 +9,21 @@ class ClassroomForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Physics 101'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Brief description of your classroom'})
+        }
+
+
+class AdminClassroomForm(forms.ModelForm):
+    teacher = forms.ModelChoiceField(
+        queryset=User.objects.filter(profile__is_teacher=True).order_by('username'),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+
+    class Meta:
+        model = Classroom
+        fields = ['name', 'description', 'teacher']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Physics 101'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Brief description of the classroom'}),
         }
 
 

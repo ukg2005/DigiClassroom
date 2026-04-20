@@ -12,7 +12,16 @@
             </div>
         {% endif %}
         <h2 class="fw-bold"><i class="fas fa-clipboard-check text-success me-2"></i>{{ assignment.title }}</h2>
-        <p class="text-muted"><i class="fas fa-list-ol me-2"></i>Total Questions: <strong>{{ questions.count }}</strong></p>
+        <p class="text-muted">
+            <span class="badge {% if assignment.is_quiz %}bg-primary{% else %}bg-secondary{% endif %}">{{ assignment.get_assignment_type_display }}</span>
+            <i class="fas fa-list-ol ms-3 me-2"></i>Total Prompts: <strong>{{ questions.count }}</strong>
+        </p>
+        {% if assignment.prompt %}
+            <div class="alert alert-light border mt-3 mb-1">
+                <div class="small text-muted mb-1"><i class="fas fa-align-left me-1"></i>Prompt / Instructions</div>
+                <div class="fw-semibold">{{ assignment.prompt }}</div>
+            </div>
+        {% endif %}
         <p class="text-muted mb-1">
             <i class="far fa-clock me-2"></i>Due:
             {% if assignment.due_date %}
@@ -26,7 +35,9 @@
             {% if assignment.late_submission_policy == 'penalty' %}
                 ({{ assignment.late_penalty_percent }}% penalty)
             {% endif %}
-            · <i class="fas fa-redo ms-2 me-2"></i>Max attempts: <strong>{{ assignment.max_attempts }}</strong>
+            {% if assignment.is_quiz %}
+                · <i class="fas fa-redo ms-2 me-2"></i>Max attempts: <strong>{{ assignment.max_attempts }}</strong>
+            {% endif %}
         </p>
     </div>
 </div>
@@ -37,10 +48,13 @@
             <h5 class="fw-bold mb-3"><i class="fas fa-tools text-primary me-2"></i>Teacher Actions</h5>
             <div class="d-flex gap-2 flex-wrap">
                 <a href="{% url 'add_question' assignment.pk %}" class="btn btn-success">
-                    <i class="fas fa-plus-circle me-2"></i>Add Question
+                    <i class="fas fa-plus-circle me-2"></i>Add {% if assignment.is_quiz %}Question{% else %}Prompt{% endif %}
                 </a>
                 <a href="{% url 'view_submissions' assignment.pk %}" class="btn btn-info">
                     <i class="fas fa-users me-2"></i>View Submissions
+                </a>
+                <a href="{% url 'classroom_calendar' assignment.classroom.pk %}" class="btn btn-outline-primary">
+                    <i class="fas fa-calendar-alt me-2"></i>Calendar
                 </a>
                 <a href="{% url 'edit_assignment' assignment.pk %}" class="btn btn-warning">
                     <i class="fas fa-edit me-2"></i>Edit
@@ -68,38 +82,50 @@
                 {% for q in questions %}
                     <li class="list-group-item">
                         <div class="fw-bold mb-2">{{ q.text }}</div>
-                        <ul class="list-unstyled ms-3">
-                        {% for choice in q.choices.all %}
-                            <li class="{% if choice.is_correct %}text-success fw-bold{% else %}text-muted{% endif %} mb-1">
-                                {% if choice.is_correct %}
-                                    <i class="fas fa-check-circle me-2"></i>
-                                {% else %}
-                                    <i class="far fa-circle me-2"></i>
-                                {% endif %}
-                                {{ choice.text }}
-                            </li>
-                        {% endfor %}
-                        </ul>
+                        {% if assignment.is_quiz %}
+                            <ul class="list-unstyled ms-3">
+                            {% for choice in q.choices.all %}
+                                <li class="{% if choice.is_correct %}text-success fw-bold{% else %}text-muted{% endif %} mb-1">
+                                    {% if choice.is_correct %}
+                                        <i class="fas fa-check-circle me-2"></i>
+                                    {% else %}
+                                        <i class="far fa-circle me-2"></i>
+                                    {% endif %}
+                                    {{ choice.text }}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="text-muted"><i class="fas fa-pen me-2"></i>Students submit written responses.</div>
+                        {% endif %}
                     </li>
                 {% endfor %}
                 </ol>
             {% else %}
                 <div class="text-center py-4">
                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No questions added yet. Click "Add Question" to create your first question.</p>
+                    <p class="text-muted">No prompts added yet. Click "Add {% if assignment.is_quiz %}Question{% else %}Prompt{% endif %}" to create your first item.</p>
                 </div>
             {% endif %}
         </div>
     </div>
 
 {% else %}
-    {% if submission %}
+    {% if is_admin %}
+        <div class="alert alert-info">
+            <i class="fas fa-eye me-2"></i>Admin read-only mode: quiz attempts are available to students only.
+        </div>
+    {% elif submission %}
         <div class="card border-success">
             <div class="card-body text-center py-5">
                 <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
                 <h4 class="fw-bold">Latest Submission Recorded</h4>
                 <p class="text-muted mb-3">Attempts used: {{ attempts_used }}/{{ assignment.max_attempts }} · Attempts left: {{ attempts_left }}</p>
-                <div class="display-4 fw-bold text-success mb-3">{{ submission.score }}/{{ questions.count }}</div>
+                {% if assignment.is_quiz %}
+                    <div class="display-4 fw-bold text-success mb-3">{{ submission.score }}/{{ max_points }}</div>
+                {% else %}
+                    <div class="h5 text-secondary mb-3">Submitted (Ungraded Q&A)</div>
+                {% endif %}
                 {% if submission.is_late %}
                     <p class="text-warning mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Submitted late{% if submission.late_penalty_percent %} ({{ submission.late_penalty_percent }}% penalty applied){% endif %}</p>
                 {% endif %}
@@ -109,18 +135,24 @@
             </div>
         </div>
     {% else %}
-        {% if questions.count > 0 and can_attempt %}
+        {% if has_content and can_attempt %}
             <div class="card border-primary">
                 <div class="card-body text-center py-5">
                     <i class="fas fa-pencil-alt fa-4x text-primary mb-3"></i>
                     <h4 class="fw-bold">Ready to Start?</h4>
-                    <p class="text-muted mb-3">This quiz has {{ questions.count }} question{{ questions.count|pluralize }}. Attempts left: {{ attempts_left }}.</p>
+                    <p class="text-muted mb-3">
+                        {% if assignment.is_quiz %}
+                            This quiz has {{ questions.count }} question{{ questions.count|pluralize }}. Attempts left: {{ attempts_left }}.
+                        {% else %}
+                            Submit your written responses for {{ questions.count }} prompt{{ questions.count|pluralize }}.
+                        {% endif %}
+                    </p>
                     <a href="{% url 'take_assignment' assignment.pk %}" class="btn btn-success btn-lg">
-                        <i class="fas fa-play me-2"></i>Start Quiz
+                        <i class="fas fa-play me-2"></i>{% if assignment.is_quiz %}Start Quiz{% else %}Start Q&A{% endif %}
                     </a>
                 </div>
             </div>
-        {% elif questions.count > 0 %}
+        {% elif has_content %}
             <div class="alert alert-warning">
                 <i class="fas fa-ban me-2"></i>
                 {% if is_late_now and assignment.late_submission_policy == 'deny' %}
@@ -143,7 +175,12 @@
                 {% for past in submissions %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <span>
-                            Attempt {{ past.attempt_number }} · {{ past.score }}/{{ questions.count }}
+                            Attempt {{ past.attempt_number }} ·
+                            {% if assignment.is_quiz %}
+                                {{ past.score }}/{{ max_points }}
+                            {% else %}
+                                Ungraded
+                            {% endif %}
                             {% if past.is_late %}<span class="text-warning ms-2">Late</span>{% endif %}
                         </span>
                         <a href="{% url 'submission_detail' past.pk %}" class="btn btn-sm btn-outline-primary">View</a>

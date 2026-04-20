@@ -8,6 +8,21 @@
         <div class="col-md-12">
             <h2 class="fw-bold"><i class="fas fa-school text-primary me-2"></i>{{ classroom.name }}</h2>
             <p class="text-muted mb-2">{{ classroom.description }}</p>
+            <p class="text-muted mb-2"><i class="fas fa-user-tie me-1"></i>Teachers: {% for t in teachers %}{{ t.username }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+            {% if student_leave_request %}
+                <div class="alert alert-warning py-2 px-3 mb-3">Student leave request pending approval.</div>
+            {% endif %}
+            {% if teacher_leave_request %}
+                <div class="alert alert-warning py-2 px-3 mb-3">Teacher leave request pending admin approval.</div>
+            {% endif %}
+            {% if is_student or is_teacher %}
+                <form method="post" action="{% url 'leave_classroom' classroom.pk %}" class="mb-3" onsubmit="return confirm('Submit a leave request for this classroom?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-sign-out-alt me-1"></i>Request Leave
+                    </button>
+                </form>
+            {% endif %}
             {% if is_teacher %}
                 <span class="badge bg-primary"><i class="fas fa-chalkboard-teacher me-1"></i>Teacher View</span>
                 <div class="card mt-3 border-0 shadow-sm">
@@ -60,7 +75,9 @@
                                 <ul class="list-group list-group-flush mt-2">
                                     {% for student in students %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span><i class="fas fa-user-graduate me-2 text-success"></i>{{ student.username }}</span>
+                                            <a href="{% url 'student_analytics' classroom.pk student.pk %}" class="text-decoration-none fw-semibold">
+                                                <i class="fas fa-user-graduate me-2 text-success"></i>{{ student.username }}
+                                            </a>
                                             <form method="post" action="{% url 'remove_student' classroom.pk student.pk %}" onsubmit="return confirm('Remove this student from the classroom?');">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
@@ -72,8 +89,36 @@
                                 <p class="text-muted mt-2 mb-0">No students enrolled yet.</p>
                             {% endif %}
                         </details>
+
+                        {% if pending_student_requests %}
+                            <details class="mt-3" open>
+                                <summary class="fw-bold"><i class="fas fa-sign-out-alt me-2"></i>Pending Student Leave Requests ({{ pending_student_requests|length }})</summary>
+                                <div class="list-group list-group-flush mt-2">
+                                    {% for leave_request in pending_student_requests %}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-semibold">{{ leave_request.requester.username }}</div>
+                                                <small class="text-muted">Requested {{ leave_request.requested_at|timesince }} ago</small>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <form method="post" action="{% url 'review_leave_request' leave_request.pk %}">
+                                                    {% csrf_token %}
+                                                    <button name="action" value="approve" type="submit" class="btn btn-sm btn-success">Approve</button>
+                                                </form>
+                                                <form method="post" action="{% url 'review_leave_request' leave_request.pk %}">
+                                                    {% csrf_token %}
+                                                    <button name="action" value="reject" type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        {% endif %}
                     </div>
                 </div>
+            {% elif is_admin %}
+                <span class="badge bg-dark"><i class="fas fa-shield-halved me-1"></i>Admin View</span>
             {% else %}
                 <span class="badge bg-success"><i class="fas fa-user-graduate me-1"></i>Student</span>
             {% endif %}
@@ -92,6 +137,13 @@
                     <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-primary mt-auto">
                         <i class="fas fa-arrow-right me-2"></i>View Notices
                     </a>
+                    {% if can_discuss %}
+                        <div class="d-grid gap-2 mt-2">
+                            <a href="{% url 'class_discussion' classroom.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-comments me-2"></i>Class Discussion
+                            </a>
+                        </div>
+                    {% endif %}
                     {% if is_teacher %}
                         <div class="d-grid gap-2 mt-2">
                             <a href="{% url 'notice_create' classroom.pk %}" class="btn btn-outline-primary btn-sm">
@@ -134,10 +186,18 @@
                     <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-success mt-auto">
                         <i class="fas fa-clipboard-list me-2"></i>View Assignments
                     </a>
+                    <div class="d-grid gap-2 mt-2">
+                        <a href="{% url 'classroom_calendar' classroom.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-calendar-alt me-2"></i>Deadline Calendar
+                        </a>
+                    </div>
                     {% if is_teacher %}
                         <div class="d-grid gap-2 mt-2">
                             <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-outline-success btn-sm">
                                 <i class="fas fa-plus me-2"></i>Create Assignment
+                            </a>
+                            <a href="{% url 'classroom_analytics' classroom.pk %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-chart-line me-1"></i>Analytics
                             </a>
                         </div>
                     {% endif %}

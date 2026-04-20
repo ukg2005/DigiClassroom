@@ -1,0 +1,165 @@
+{% extends 'users/base.html' %}
+{% block title %}Admin Dashboard - DigiClassroom{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold mb-1"><i class="fas fa-shield-halved text-primary me-2"></i>Admin Dashboard</h2>
+        <p class="text-muted mb-0">Create classes, review teacher join requests, and monitor class analytics.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Create Class</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Class Name</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assigned Teacher</label>
+                        {{ form.teacher }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Create Class</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Pending Teacher Join Requests</h5>
+                <span class="badge bg-warning text-dark" id="pendingJoinCountBadge">{{ pending_join_requests|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if pending_join_requests %}
+                    <div class="list-group list-group-flush">
+                        {% for join_request in pending_join_requests %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                    <div>
+                                        <div class="fw-bold">{{ join_request.classroom.name }}</div>
+                                        <div class="text-muted small">{{ join_request.requester.username }} requested to join {{ join_request.requested_at|timesince }} ago</div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <form method="post" action="{% url 'review_teacher_join_request' join_request.pk %}">
+                                            {% csrf_token %}
+                                            <button name="action" value="approve" type="submit" class="btn btn-sm btn-success">Approve</button>
+                                        </form>
+                                        <form method="post" action="{% url 'review_teacher_join_request' join_request.pk %}">
+                                            {% csrf_token %}
+                                            <button name="action" value="reject" type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 text-muted">No pending teacher join requests.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Classes</h5>
+        <span class="badge bg-primary" id="totalClassroomsBadge">{{ classroom_cards|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for card in classroom_cards %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div>
+                                    <h5 class="fw-bold mb-1">{{ card.classroom.name }}</h5>
+                                    <p class="text-muted mb-0">{{ card.classroom.description|default:'No description yet.'|truncatewords:16 }}</p>
+                                </div>
+                                <span class="badge bg-secondary">{{ card.total_students }} students</span>
+                            </div>
+                            <div class="row text-center my-3">
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted small">Teachers</div>
+                                    <div class="fw-bold">{{ card.total_teachers }}</div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted small">Assignments</div>
+                                    <div class="fw-bold">{{ card.total_assignments }}</div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted small">Avg Score</div>
+                                    <div class="fw-bold text-success">{{ card.avg_score }}%</div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted small">Completion</div>
+                                    <div class="fw-bold text-info">{{ card.completion_rate }}%</div>
+                                </div>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ card.completion_rate }}%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mb-3">
+                                <span>0%</span>
+                                <span>{{ card.completion_rate }}% completion</span>
+                                <span>100%</span>
+                            </div>
+                            <div class="mt-auto d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="small text-muted">Created by: <strong>{{ card.classroom.created_by.username|default:'N/A' }}</strong></div>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a href="{% url 'classroom_detail' card.classroom.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const joinBadge = document.getElementById('pendingJoinCountBadge');
+    const totalBadge = document.getElementById('totalClassroomsBadge');
+
+    async function pollCounts() {
+        try {
+            const res = await fetch('{% url "dashboard_live_counts" %}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.role !== 'admin') return;
+
+            const nextJoin = Number(data.pending_join_requests || 0);
+            const nextTotal = Number(data.total_classrooms || 0);
+            const currentJoin = Number(joinBadge.textContent || 0);
+            const currentTotal = Number(totalBadge.textContent || 0);
+
+            if (nextJoin !== currentJoin || nextTotal !== currentTotal) {
+                window.location.reload();
+            }
+        } catch (e) {
+            // Keep page stable on transient network errors.
+        }
+    }
+
+    setInterval(pollCounts, 12000);
+})();
+</script>
+{% endblock %}

@@ -22,4 +22,8 @@ urlpatterns = [
         form_class=CustomSetPasswordForm
     ), name='password_reset_confirm'),
     path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(template_name='users/reset_password_complete.html'), name='password_reset_complete'),
+    path('notifications/', views.notifications_page, name='notifications_page'),
+    path('notifications/feed/', views.notifications_feed, name='notifications_feed'),
+    path('notifications/mark-all-read/', views.notifications_mark_all_read, name='notifications_mark_all_read'),
+    path('notifications/<int:pk>/mark-read/', views.notifications_mark_read, name='notifications_mark_read'),
 ]

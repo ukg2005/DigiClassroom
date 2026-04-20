@@ -38,3 +38,32 @@ class NoticeComment(models.Model):
 
     def __str__(self):
         return f'Comment by {self.author.username} on {self.notice.title}'
+
+
+class GlobalDiscussionPost(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='global_discussion_posts')
+    content = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.author.username}: {self.content[:40]}'
+
+
+class ClassDiscussionPost(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='discussion_posts')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='class_discussion_posts')
+    content = models.TextField(max_length=2000)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_edited = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.author.username} @ {self.classroom.name}: {self.content[:40]}'

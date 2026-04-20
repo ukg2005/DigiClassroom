@@ -1,0 +1,57 @@
+{% extends 'users/base.html' %}
+{% block title %}Class Discussion - {{ classroom.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h3 class="fw-bold mb-1"><i class="fas fa-comments me-2 text-primary"></i>{{ classroom.name }} Discussion</h3>
+        <p class="text-muted mb-0">Threaded discussion for this class.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Class
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Start New Thread</h5></div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <textarea class="form-control mb-3" name="content" rows="3" maxlength="2000" placeholder="Post a question, idea, or announcement..." required></textarea>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i>Post Thread</button>
+        </form>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="mb-0 fw-bold">Threads</h5>
+    <span class="badge bg-primary">{{ threads|length }}</span>
+</div>
+
+{% if threads %}
+    {% for node in threads %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <div class="fw-bold">{{ node.post.author.username }}</div>
+                        <div class="text-muted small">{{ node.post.created_at|date:"M d, Y H:i" }}{% if node.post.is_edited %} · edited{% endif %}</div>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-secondary">{{ node.children|length }} replies</span>
+                        <a href="{% url 'class_discussion_thread' node.post.pk %}" class="btn btn-sm btn-primary">Open</a>
+                        {% if user == node.post.author or is_teacher %}
+                            <a href="{% url 'edit_class_discussion_post' node.post.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="mb-0 mt-2">{{ node.post.content|truncatewords:40 }}</p>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center py-5 text-muted">No threads yet.</div>
+{% endif %}
+{% endblock %}

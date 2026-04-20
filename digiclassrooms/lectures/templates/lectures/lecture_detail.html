@@ -71,7 +71,11 @@
                 <h6 id="form-title" class="mb-0"><i class="fas fa-comment-dots me-2"></i>Post a Comment</h6>
             </div>
             <div class="card-body">
-                {% if lecture.is_thread_locked and not is_teacher %}
+                {% if not can_interact %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-eye me-2"></i>Admin read-only mode: discussion is hidden for admins.
+                    </div>
+                {% elif lecture.is_thread_locked and not is_teacher %}
                     <div class="alert alert-warning mb-0">
                         <i class="fas fa-lock me-2"></i>This discussion is locked by the teacher.
                     </div>

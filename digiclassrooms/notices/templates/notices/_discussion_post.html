@@ -1,0 +1,42 @@
+<div class="card mb-3" style="margin-left: {{ depth|default:0 }}rem;">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+            <div>
+                <div class="fw-bold">{{ node.post.author.username }}</div>
+                <div class="text-muted small">
+                    {{ node.post.created_at|date:"M d, Y H:i" }}{% if node.post.is_edited %} · edited{% endif %}
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap justify-content-end">
+                {% if user == node.post.author or is_teacher %}
+                    <a href="{% url 'edit_class_discussion_post' node.post.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                {% endif %}
+                {% if user == node.post.author or is_teacher %}
+                    <form method="post" action="{% url 'delete_class_discussion_post' node.post.pk %}" onsubmit="return confirm('Delete this message{% if node.children %} and its replies{% endif %}?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mt-2">{{ node.post.content|linebreaksbr }}</div>
+
+        <details class="mt-3">
+            <summary class="text-primary fw-semibold">Reply</summary>
+            <form method="post" action="{% url 'class_discussion_thread' thread.pk %}" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="parent_id" value="{{ node.post.pk }}">
+                <textarea class="form-control mb-2" name="content" rows="2" maxlength="2000" placeholder="Reply to {{ node.post.author.username }}..." required></textarea>
+                <button type="submit" class="btn btn-sm btn-primary">Post Reply</button>
+            </form>
+        </details>
+    </div>
+</div>
+
+{% if node.children %}
+    <div class="ms-4 ps-2 border-start">
+        {% for child in node.children %}
+            {% include 'notices/_discussion_post.html' with node=child thread=thread is_teacher=is_teacher depth=depth|add:1 %}
+        {% endfor %}
+    </div>
+{% endif %}

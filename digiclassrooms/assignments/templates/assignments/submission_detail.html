@@ -31,10 +31,14 @@
                         {% endif %}
                     </div>
                     <div class="col-md-6 text-md-end">
-                        <div class="display-6 fw-bold text-success">
-                            <i class="fas fa-chart-line me-2"></i>{{ submission.score }}/{{ answers|length }}
-                        </div>
-                        <p class="text-muted">Score</p>
+                        {% if submission.assignment.is_quiz %}
+                            <div class="display-6 fw-bold text-success">
+                                <i class="fas fa-chart-line me-2"></i>{{ submission.score }}/{{ max_points }}
+                            </div>
+                            <p class="text-muted">Score</p>
+                        {% else %}
+                            <div class="h5 text-secondary mt-3">Ungraded Q&A Submission</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -77,35 +81,48 @@
             <div class="card-body p-0">
                 <div class="list-group list-group-flush">
                     {% for ans in answers %}
-                        <div class="list-group-item {% if ans.choice.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}">
+                        <div class="list-group-item {% if submission.assignment.is_quiz and ans.choice and ans.choice.is_correct %}list-group-item-success{% elif submission.assignment.is_quiz %}list-group-item-danger{% endif %}">
                             <div class="d-flex w-100 justify-content-between align-items-start">
                                 <div class="flex-grow-1">
                                     <h6 class="mb-2 fw-bold">{{ forloop.counter }}. {{ ans.question.text }}</h6>
-                                    <p class="mb-1">
-                                        {% if ans.choice.is_correct %}
-                                            <i class="fas fa-check-circle text-success me-2"></i>
-                                            <strong>Your answer:</strong> {{ ans.choice.text }}
-                                        {% else %}
-                                            <i class="fas fa-times-circle text-danger me-2"></i>
-                                            <strong>Your answer:</strong> <span class="text-danger">{{ ans.choice.text }}</span>
-                                        {% endif %}
-                                    </p>
-                                    {% if not ans.choice.is_correct %}
-                                        <p class="mb-0 mt-1">
-                                            <i class="fas fa-check-circle text-success me-2"></i>
-                                            <strong>Correct answer:</strong> <span class="text-success">
-                                                {% for choice in ans.question.choices.all %}
-                                                    {% if choice.is_correct %}{{ choice.text }}{% endif %}
-                                                {% endfor %}
-                                            </span>
+                                    {% if submission.assignment.is_quiz %}
+                                        <p class="mb-1">
+                                            {% if ans.choice and ans.choice.is_correct %}
+                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                <strong>Your answer:</strong> {{ ans.choice.text }}
+                                            {% else %}
+                                                <i class="fas fa-times-circle text-danger me-2"></i>
+                                                <strong>Your answer:</strong> <span class="text-danger">{% if ans.choice %}{{ ans.choice.text }}{% else %}No answer{% endif %}</span>
+                                            {% endif %}
                                         </p>
+                                        {% if not ans.choice or not ans.choice.is_correct %}
+                                            <p class="mb-0 mt-1">
+                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                <strong>Correct answer:</strong> <span class="text-success">
+                                                    {% for choice in ans.question.choices.all %}
+                                                        {% if choice.is_correct %}{{ choice.text }}{% endif %}
+                                                    {% endfor %}
+                                                </span>
+                                            </p>
+                                        {% endif %}
+                                    {% else %}
+                                        <p class="mb-1"><strong>Response:</strong></p>
+                                        <div class="border rounded p-2 bg-light">{{ ans.text_response|linebreaksbr }}</div>
+                                    {% endif %}
+                                    {% if not submission.assignment.is_quiz and submission.text_response %}
+                                        <p class="mb-1 mt-3"><strong>General Response:</strong></p>
+                                        <div class="border rounded p-2 bg-light">{{ submission.text_response|linebreaksbr }}</div>
                                     {% endif %}
                                 </div>
                                 <div>
-                                    {% if ans.choice.is_correct %}
-                                        <span class="badge bg-success">Correct</span>
+                                    {% if submission.assignment.is_quiz %}
+                                        {% if ans.choice and ans.choice.is_correct %}
+                                            <span class="badge bg-success">Correct</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Incorrect</span>
+                                        {% endif %}
                                     {% else %}
-                                        <span class="badge bg-danger">Incorrect</span>
+                                        <span class="badge bg-secondary">Ungraded</span>
                                     {% endif %}
                                 </div>
                             </div>

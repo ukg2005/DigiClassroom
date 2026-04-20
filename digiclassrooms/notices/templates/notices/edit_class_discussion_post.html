@@ -1,0 +1,22 @@
+{% extends 'users/base.html' %}
+{% block title %}Edit Discussion Post{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Edit Post</h5></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <textarea class="form-control mb-3" name="content" rows="5" maxlength="2000" required>{{ post.content }}</textarea>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="{% url 'class_discussion_thread' root_post.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,5 +1,5 @@
 {% extends 'users/base.html' %}
-{% block title %}{{ assignment.title }} - Quiz{% endblock %}
+{% block title %}{{ assignment.title }} - {% if assignment.is_quiz %}Quiz{% else %}Q&A{% endif %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -8,18 +8,29 @@
             <div class="card-header" style="background: linear-gradient(135deg, var(--secondary-color), #059669); color: white;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h4 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>{{ assignment.title }}</h4>
-                    <span class="badge bg-light text-dark">{{ assignment.questions.all|length }} Questions</span>
+                    <span class="badge bg-light text-dark">{{ assignment.questions.all|length }} Prompts</span>
                 </div>
             </div>
             <div class="card-body">
                 <small class="text-muted d-block">
+                    <i class="fas fa-tag me-1"></i>Type: {{ assignment.get_assignment_type_display }}
+                </small>
+                {% if assignment.prompt %}
+                    <div class="alert alert-light border my-3 py-2">
+                        <div class="small text-muted mb-1"><i class="fas fa-align-left me-1"></i>Prompt / Instructions</div>
+                        <div class="fw-semibold">{{ assignment.prompt }}</div>
+                    </div>
+                {% endif %}
+                <small class="text-muted d-block">
                     <i class="far fa-clock me-1"></i>Due:
                     {% if assignment.due_date %}{{ assignment.due_date|date:"Y-m-d H:i T" }}{% else %}No due date{% endif %}
                 </small>
-                <small class="text-muted d-block">
-                    <i class="fas fa-hourglass-half me-1"></i>Late policy: {{ assignment.get_late_submission_policy_display }}
-                    {% if assignment.late_submission_policy == 'penalty' %} ({{ assignment.late_penalty_percent }}% penalty){% endif %}
-                </small>
+                {% if assignment.is_quiz %}
+                    <small class="text-muted d-block">
+                        <i class="fas fa-hourglass-half me-1"></i>Late policy: {{ assignment.get_late_submission_policy_display }}
+                        {% if assignment.late_submission_policy == 'penalty' %} ({{ assignment.late_penalty_percent }}% penalty){% endif %}
+                    </small>
+                {% endif %}
             </div>
         </div>
         
@@ -28,35 +39,50 @@
             {% for q in assignment.questions.all %}
                 <div class="card mb-3">
                     <div class="card-header bg-primary text-white">
-                        <strong>Question {{ forloop.counter }} of {{ assignment.questions.all|length }}</strong>
+                        <strong>Prompt {{ forloop.counter }} of {{ assignment.questions.all|length }}</strong>
                     </div>
                     <div class="card-body">
                         <h5 class="mb-3">{{ q.text }}</h5>
-                        <div class="list-group">
-                            {% for choice in q.choices.all %}
-                                <label class="list-group-item list-group-item-action" style="cursor: pointer;">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="question_{{ q.id }}" value="{{ choice.id }}" id="choice_{{ choice.id }}">
-                                        <label class="form-check-label ms-2" for="choice_{{ choice.id }}" style="cursor: pointer;">
-                                            {{ choice.text }}
-                                        </label>
-                                    </div>
-                                </label>
-                            {% endfor %}
-                        </div>
+                        {% if assignment.is_quiz %}
+                            <div class="list-group">
+                                {% for choice in q.choices.all %}
+                                    <label class="list-group-item list-group-item-action" style="cursor: pointer;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="question_{{ q.id }}" value="{{ choice.id }}" id="choice_{{ choice.id }}">
+                                            <label class="form-check-label ms-2" for="choice_{{ choice.id }}" style="cursor: pointer;">
+                                                {{ choice.text }}
+                                            </label>
+                                        </div>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <textarea class="form-control" rows="4" name="question_{{ q.id }}_text" placeholder="Write your response here"></textarea>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
+
+            {% if not assignment.is_quiz and assignment.questions.all|length == 0 %}
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white"><strong>Response</strong></div>
+                    <div class="card-body">
+                        <textarea class="form-control" rows="6" name="general_response" placeholder="Write your response here"></textarea>
+                    </div>
+                </div>
+            {% endif %}
             
             <div class="card border-success">
                 <div class="card-body text-center py-4">
-                    <p class="text-muted mb-3"><i class="fas fa-info-circle me-2"></i>Review your answers before submitting</p>
+                    <p class="text-muted mb-3"><i class="fas fa-info-circle me-2"></i>{% if assignment.is_quiz %}Review your answers before submitting{% else %}Review your responses before submitting{% endif %}</p>
                     <div class="d-flex justify-content-center gap-2 flex-wrap">
-                        <button type="submit" name="action" value="save_draft" class="btn btn-outline-primary btn-lg">
-                            <i class="fas fa-save me-2"></i>Save Draft
-                        </button>
+                        {% if assignment.is_quiz %}
+                            <button type="submit" name="action" value="save_draft" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Save Draft
+                            </button>
+                        {% endif %}
                         <button type="submit" name="action" value="submit" class="btn btn-success btn-lg">
-                            <i class="fas fa-paper-plane me-2"></i>Submit Answers
+                            <i class="fas fa-paper-plane me-2"></i>{% if assignment.is_quiz %}Submit Answers{% else %}Submit Response{% endif %}
                         </button>
                     </div>
                 </div>
@@ -79,22 +105,24 @@
 {% endblock %}
 
 {% block extra_js %}
-{{ draft_answers|json_script:"draft-answers" }}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const draftData = document.getElementById('draft-answers');
-    if (!draftData) {
-        return;
-    }
-
-    const draftAnswers = JSON.parse(draftData.textContent);
-    Object.keys(draftAnswers).forEach(function (questionId) {
-        const choiceId = draftAnswers[questionId];
-        const input = document.querySelector(`input[name="question_${questionId}"][value="${choiceId}"]`);
-        if (input) {
-            input.checked = true;
+{% if assignment.is_quiz %}
+    {{ draft_answers|json_script:"draft-answers" }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const draftData = document.getElementById('draft-answers');
+        if (!draftData) {
+            return;
         }
+
+        const draftAnswers = JSON.parse(draftData.textContent);
+        Object.keys(draftAnswers).forEach(function (questionId) {
+            const choiceId = draftAnswers[questionId];
+            const input = document.querySelector(`input[name="question_${questionId}"][value="${choiceId}"]`);
+            if (input) {
+                input.checked = true;
+            }
+        });
     });
-});
-</script>
+    </script>
+{% endif %}
 {% endblock %}
