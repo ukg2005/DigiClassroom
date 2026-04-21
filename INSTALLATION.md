@@ -88,6 +88,23 @@ python manage.py runserver
 
 Visit `http://127.0.0.1:8000/` in your browser.
 
+### 9. Verify New Feature Migrations (Recommended)
+
+Recent updates include Q&A grading fields, per-question marks, and support/thread workflow changes.
+
+Run:
+
+```bash
+python manage.py migrate
+python manage.py check
+```
+
+Then sanity-check these flows:
+- Teacher creates a Q&A question with marks greater than 1
+- Student submits Q&A answers
+- Teacher assigns per-question marks and feedback in submission review
+- Admin can view pending teacher join/leave requests on admin dashboard
+
 ## Email Configuration
 
 For password reset functionality:

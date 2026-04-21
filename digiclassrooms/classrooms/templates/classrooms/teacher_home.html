@@ -25,9 +25,6 @@
                         <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-primary">
                             <i class="fas fa-door-open me-2"></i>Open Classroom
                         </a>
-                        <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-outline-info btn-sm">
-                            <i class="fas fa-chart-line me-1"></i>Class Overview
-                        </a>
                     </div>
                 </div>
             </div>
@@ -45,35 +42,38 @@
     {% endfor %}
 </div>
 
-{% if pending_join_requests %}
-<div class="card mt-4">
-    <div class="card-header">
+<details class="card mt-4 collapsible-panel" open>
+    <summary class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-hourglass-half me-2"></i>Your Pending Join Requests</h5>
-    </div>
+        <span class="text-muted small">Click to collapse</span>
+    </summary>
     <div class="card-body p-0">
-        <div class="list-group list-group-flush">
-            {% for req in pending_join_requests %}
-                <div class="list-group-item d-flex justify-content-between align-items-center gap-3 flex-wrap">
-                    <div>
-                        <div class="fw-semibold">{{ req.classroom.name }}</div>
-                        <div class="text-muted small">Requested {{ req.requested_at|timesince }} ago</div>
+        {% if pending_join_requests %}
+            <div class="list-group list-group-flush">
+                {% for req in pending_join_requests %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                        <div>
+                            <div class="fw-semibold">{{ req.classroom.name }}</div>
+                            <div class="text-muted small">Requested {{ req.requested_at|timesince }} ago</div>
+                        </div>
+                        <form method="post" action="{% url 'cancel_teacher_join_request' req.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Request</button>
+                        </form>
                     </div>
-                    <form method="post" action="{% url 'cancel_teacher_join_request' req.pk %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Request</button>
-                    </form>
-                </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">No pending join requests.</div>
+        {% endif %}
     </div>
-</div>
-{% endif %}
+</details>
 
-<div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+<details class="card mt-4 collapsible-panel" open>
+    <summary class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Request To Teach New Class</h5>
         <span class="badge bg-secondary" id="teacherAvailableClassroomsBadge">{{ available_classrooms|length }}</span>
-    </div>
+    </summary>
     <div class="card-body p-0">
         {% if available_classrooms %}
             <div class="list-group list-group-flush">
@@ -100,7 +100,7 @@
             <div class="text-center py-4 text-muted">No additional classes available for join requests.</div>
         {% endif %}
     </div>
-</div>
+</details>
 {% endblock %}
 
 {% block extra_js %}

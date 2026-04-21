@@ -126,86 +126,84 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card text-center h-100">
-                <div class="card-body d-flex flex-column justify-content-center p-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center h-100 feature-card">
+                <div class="card-body d-flex flex-column p-3">
                     <div class="mb-3">
                         <i class="fas fa-bullhorn fa-3x text-primary mb-3"></i>
                     </div>
                     <h5 class="card-title fw-bold">Notice Board</h5>
-                    <p class="card-text text-muted">Announcements and discussions</p>
-                    <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-primary mt-auto">
-                        <i class="fas fa-arrow-right me-2"></i>View Notices
-                    </a>
+                    <p class="card-text text-muted mb-2 card-summary">Announcements and updates</p>
+                    <div class="d-grid gap-2 mt-3 card-actions-stack">
+                        <a href="{% url 'notices_list' classroom.pk %}" class="btn btn-primary">
+                            <i class="fas fa-arrow-right me-2"></i>View Notices
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center h-100 feature-card">
+                <div class="card-body d-flex flex-column p-3">
+                    <div class="mb-3">
+                        <i class="fas fa-comments fa-3x text-info mb-3"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Class Discussion</h5>
+                    <p class="card-text text-muted mb-2 card-summary">Open conversation space for your class</p>
                     {% if can_discuss %}
-                        <div class="d-grid gap-2 mt-2">
-                            <a href="{% url 'class_discussion' classroom.pk %}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-comments me-2"></i>Class Discussion
-                            </a>
-                        </div>
-                    {% endif %}
-                    {% if is_teacher %}
-                        <div class="d-grid gap-2 mt-2">
-                            <a href="{% url 'notice_create' classroom.pk %}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-plus me-2"></i>Create Notice
-                            </a>
-                        </div>
+                        <a href="{% url 'class_discussion' classroom.pk %}" class="btn btn-info mt-3 text-white">
+                            <i class="fas fa-comments me-2"></i>Open Discussion
+                        </a>
+                    {% else %}
+                        <button class="btn btn-outline-secondary mt-3" disabled>
+                            <i class="fas fa-eye me-2"></i>Read-only for admin
+                        </button>
                     {% endif %}
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-center h-100">
-                <div class="card-body d-flex flex-column justify-content-center p-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center h-100 feature-card">
+                <div class="card-body d-flex flex-column p-3">
                     <div class="mb-3">
                         <i class="fas fa-video fa-3x text-danger mb-3"></i>
                     </div>
                     <h5 class="card-title fw-bold">Lectures</h5>
-                    <p class="card-text text-muted">Video lessons and Q&A</p>
-                    <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-danger mt-auto">
-                        <i class="fas fa-play me-2"></i>Watch Lectures
-                    </a>
-                    {% if is_teacher %}
-                        <div class="d-grid gap-2 mt-2">
-                            <a href="{% url 'lecture_create' classroom.pk %}" class="btn btn-outline-danger btn-sm">
-                                <i class="fas fa-plus me-2"></i>Add Lecture
-                            </a>
-                        </div>
-                    {% endif %}
+                    <p class="card-text text-muted mb-2 card-summary">Video lessons and Q&amp;A</p>
+                    <div class="d-grid gap-2 mt-3 card-actions-stack">
+                        <a href="{% url 'lectures_list' classroom.pk %}" class="btn btn-danger">
+                            <i class="fas fa-play me-2"></i>Watch Lectures
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-center h-100">
-                <div class="card-body d-flex flex-column justify-content-center p-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center h-100 feature-card">
+                <div class="card-body d-flex flex-column p-3">
                     <div class="mb-3">
                         <i class="fas fa-tasks fa-3x text-success mb-3"></i>
                     </div>
                     <h5 class="card-title fw-bold">Assignments</h5>
-                    <p class="card-text text-muted">Quizzes and results</p>
-                    <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-success mt-auto">
-                        <i class="fas fa-clipboard-list me-2"></i>View Assignments
-                    </a>
-                    <div class="d-grid gap-2 mt-2">
-                        <a href="{% url 'classroom_calendar' classroom.pk %}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-calendar-alt me-2"></i>Deadline Calendar
+                    <p class="card-text text-muted mb-2 card-summary">Quizzes and results</p>
+                    <div class="d-grid gap-2 mt-3 card-actions-stack">
+                        <a href="{% url 'assignment_list' classroom.pk %}" class="btn btn-success">
+                            <i class="fas fa-clipboard-list me-2"></i>View Assignments
                         </a>
                     </div>
-                    {% if is_teacher %}
-                        <div class="d-grid gap-2 mt-2">
-                            <a href="{% url 'assignment_create' classroom.pk %}" class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-plus me-2"></i>Create Assignment
-                            </a>
-                            <a href="{% url 'classroom_analytics' classroom.pk %}" class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-chart-line me-1"></i>Analytics
-                            </a>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .feature-card .card-summary {
+        min-height: 3rem;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}

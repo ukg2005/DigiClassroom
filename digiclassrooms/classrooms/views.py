@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.core.paginator import Paginator
 from django.utils import timezone
 from .models import Classroom
@@ -11,7 +11,7 @@ from .models import ClassroomLeaveRequest, ClassroomTeacherJoinRequest
 from .forms import ClassroomForm, JoinClassroomForm, ClassJoinSettingsForm, AdminClassroomForm
 from assignments.models import Submission, Assignment, DeadlineEvent
 from django.contrib.auth.models import User
-from users.models import Notification
+from users.models import Notification, SupportTicket
 
 
 def is_admin_user(user):
@@ -68,22 +68,23 @@ def admin_dashboard(request):
     classroom_cards = []
     for classroom in Classroom.objects.all().order_by('-created_at'):
         submissions = Submission.objects.filter(assignment__classroom=classroom)
+        graded_submissions = submissions.filter(Q(assignment__assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ) | Q(graded_at__isnull=False))
         percentages = []
-        for submission in submissions.select_related('assignment'):
-            max_points = submission.assignment.questions.count()
+        for submission in graded_submissions.select_related('assignment'):
+            max_points = submission.assignment.questions.aggregate(total=Sum('marks')).get('total') or 0
             if max_points > 0:
                 percentages.append((submission.score / max_points) * 100)
         total_assignments = classroom.assignments.count()
         total_students = classroom.students.count()
         completion_rate = 0
         if total_assignments and total_students:
-            completion_rate = round((submissions.values('student_id', 'assignment_id').distinct().count() / (total_assignments * total_students)) * 100, 1)
+            completion_rate = round((graded_submissions.values('student_id', 'assignment_id').distinct().count() / (total_assignments * total_students)) * 100, 1)
         classroom_cards.append({
             'classroom': classroom,
             'total_students': total_students,
             'total_teachers': classroom.teachers.count(),
             'total_assignments': total_assignments,
-            'total_submissions': submissions.count(),
+            'total_submissions': graded_submissions.count(),
             'avg_score': round(sum(percentages) / len(percentages), 1) if percentages else 0,
             'completion_rate': completion_rate,
             'teacher_leave_requests': classroom.leave_requests.filter(role=ClassroomLeaveRequest.ROLE_TEACHER, status=ClassroomLeaveRequest.STATUS_PENDING).count(),
@@ -91,12 +92,14 @@ def admin_dashboard(request):
 
     pending_leave_requests = ClassroomLeaveRequest.objects.filter(role=ClassroomLeaveRequest.ROLE_TEACHER, status=ClassroomLeaveRequest.STATUS_PENDING).select_related('classroom', 'requester')
     pending_join_requests = ClassroomTeacherJoinRequest.objects.filter(status=ClassroomTeacherJoinRequest.STATUS_PENDING).select_related('classroom', 'requester')
+    support_tickets_open = SupportTicket.objects.filter(status=SupportTicket.STATUS_OPEN).count()
 
     return render(request, 'classrooms/admin_dashboard.html', {
         'form': form,
         'classroom_cards': classroom_cards,
         'pending_leave_requests': pending_leave_requests,
         'pending_join_requests': pending_join_requests,
+        'support_tickets_open': support_tickets_open,
     })
 
 @login_required(login_url='login')
@@ -470,17 +473,18 @@ def student_analytics(request, pk, student_id):
     student = get_object_or_404(classroom.students, pk=student_id)
     submissions = Submission.objects.filter(assignment__classroom=classroom, student=student).select_related('assignment').order_by('-submitted_at')
     available_quizzes = classroom.assignments.count()
-    completed_quizzes = submissions.values('assignment_id').distinct().count()
+    graded_submissions = submissions.filter(Q(assignment__assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ) | Q(graded_at__isnull=False))
+    completed_quizzes = graded_submissions.values('assignment_id').distinct().count()
     completion_rate = round((completed_quizzes / available_quizzes) * 100, 1) if available_quizzes else 0
 
     submission_percentages = []
-    for submission in submissions:
-        max_points = submission.assignment.questions.count()
+    for submission in graded_submissions:
+        max_points = submission.assignment.questions.aggregate(total=Sum('marks')).get('total') or 0
         if max_points > 0:
             submission_percentages.append((submission.score / max_points) * 100)
 
     avg_score = round(sum(submission_percentages) / len(submission_percentages), 1) if submission_percentages else 0
-    missing_assignments = classroom.assignments.exclude(id__in=submissions.values_list('assignment_id', flat=True))
+    missing_assignments = classroom.assignments.exclude(id__in=graded_submissions.values_list('assignment_id', flat=True))
 
     return render(request, 'classrooms/student_analytics.html', {
         'classroom': classroom,
@@ -542,8 +546,14 @@ def review_leave_request(request, pk):
         allowed = is_teacher
     else:
         allowed = is_admin
-    if not allowed or request.method != 'POST':
+
+    def _redirect_back():
+        if is_admin and leave_request.role == ClassroomLeaveRequest.ROLE_TEACHER:
+            return redirect('admin_dashboard')
         return redirect('classroom_detail', pk=classroom.pk)
+
+    if not allowed or request.method != 'POST':
+        return _redirect_back()
 
     action = request.POST.get('action')
     if action == 'reject':
@@ -552,7 +562,7 @@ def review_leave_request(request, pk):
         leave_request.reviewed_at = timezone.now()
         leave_request.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
         messages.success(request, 'Leave request rejected.')
-        return redirect('classroom_detail', pk=classroom.pk)
+        return _redirect_back()
 
     if leave_request.role == ClassroomLeaveRequest.ROLE_STUDENT:
         classroom.students.remove(leave_request.requester)
@@ -565,14 +575,14 @@ def review_leave_request(request, pk):
                 classroom.save(update_fields=['teacher'])
             else:
                 messages.error(request, 'Cannot approve teacher leave because no other teacher remains.')
-                return redirect('classroom_detail', pk=classroom.pk)
+                return _redirect_back()
 
     leave_request.status = ClassroomLeaveRequest.STATUS_APPROVED
     leave_request.reviewed_by = request.user
     leave_request.reviewed_at = timezone.now()
     leave_request.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
     messages.success(request, 'Leave request approved.')
-    return redirect('classroom_detail', pk=classroom.pk)
+    return _redirect_back()
 
 @login_required(login_url='login')
 def classroom_notices(request, pk):

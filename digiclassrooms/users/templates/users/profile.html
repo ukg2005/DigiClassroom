@@ -1,0 +1,197 @@
+{% extends 'users/base.html' %}
+{% block title %}Profile - DigiClassroom{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold mb-1"><i class="fas fa-user-circle text-primary me-2"></i>My Profile</h2>
+        <p class="text-muted mb-0">Manage your account and follow up on messages to the admin team.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'support_create' %}" class="btn btn-primary">
+            <i class="fas fa-headset me-2"></i>Contact Admin
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 84px; height: 84px; font-size: 2rem;">
+                        {{ user.username|first|upper }}
+                    </div>
+                    <h4 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted mb-2">@{{ user.username }}</p>
+                    {% if user.profile.is_admin %}
+                        <span class="badge bg-dark">Admin</span>
+                    {% elif user.profile.is_teacher %}
+                        <span class="badge bg-primary">Teacher</span>
+                    {% else %}
+                        <span class="badge bg-success">Student</span>
+                    {% endif %}
+                </div>
+
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0">
+                        <div class="text-muted small mb-1">Email</div>
+                        <div class="fw-semibold">{{ user.email|default:'Not set' }}</div>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <div class="text-muted small mb-1">Account Type</div>
+                        <div class="fw-semibold">{% if user.profile.is_admin %}Admin{% elif user.profile.is_teacher %}Teacher{% else %}Student{% endif %}</div>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <div class="text-muted small mb-1">Joined</div>
+                        <div class="fw-semibold">{{ user.date_joined|date:"M d, Y" }}</div>
+                    </div>
+                </div>
+
+                <div class="card mt-4 border-0 bg-light-subtle">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3"><i class="fas fa-pen-to-square me-2"></i>Edit Profile</h6>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Email</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors }}</div>{% endif %}
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">First Name</label>
+                                    {{ form.first_name }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Last Name</label>
+                                    {{ form.last_name }}
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                                <a href="{% url 'change_password' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-key me-2"></i>Change Password
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Open Tickets</div>
+                        <div class="display-6 fw-bold text-danger">{{ open_tickets_count }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">In Progress</div>
+                        <div class="display-6 fw-bold text-warning">{{ in_progress_tickets_count }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Resolved</div>
+                        <div class="display-6 fw-bold text-success">{{ resolved_tickets_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>My Messages to Admin</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if tickets %}
+                    <div class="list-group list-group-flush">
+                        {% for ticket in tickets %}
+                            <a href="{% url 'support_detail' ticket.pk %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                    <div>
+                                        <div class="fw-bold">{{ ticket.subject }}</div>
+                                        <div class="text-muted small">{{ ticket.get_category_display }} · {{ ticket.created_at|date:"M d, Y H:i" }}</div>
+                                    </div>
+                                    <span class="badge {% if ticket.status == 'open' %}bg-danger{% elif ticket.status == 'in_progress' %}bg-warning text-dark{% elif ticket.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="text-muted mb-0 mt-2">{{ ticket.message|truncatewords:20 }}</p>
+                                {% if ticket.admin_reply %}
+                                    <div class="alert alert-light border mt-3 mb-0 py-2">
+                                        <div class="small text-muted mb-1">Admin reply</div>
+                                        <div>{{ ticket.admin_reply|truncatewords:24 }}</div>
+                                    </div>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p class="mb-0">No messages yet. Use Contact Admin when you need help or want to raise a complaint.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-school me-2"></i>Classes I'm In</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if enrolled_classrooms %}
+                            <ul class="list-group list-group-flush">
+                                {% for classroom in enrolled_classrooms %}
+                                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                        <span>{{ classroom.name }}</span>
+                                        <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-sm btn-outline-primary">Open</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted mb-0">You are not enrolled in any classes yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>Classes I Teach</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if teaching_classrooms %}
+                            <ul class="list-group list-group-flush">
+                                {% for classroom in teaching_classrooms %}
+                                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                        <span>{{ classroom.name }}</span>
+                                        <a href="{% url 'classroom_detail' classroom.pk %}" class="btn btn-sm btn-outline-primary">Open</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted mb-0">You are not teaching any classes right now.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

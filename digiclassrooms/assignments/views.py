@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.http import HttpResponse
+from django.db.models import Q, Sum
 import math
 import csv
 from classrooms.models import Classroom
@@ -15,9 +16,8 @@ def _is_admin_user(user):
 
 
 def _assignment_max_points(assignment):
-    if not assignment.is_quiz:
-        return 0
-    return assignment.questions.filter(question_type=Question.QUESTION_TYPE_MCQ).count()
+    total = assignment.questions.aggregate(total=Sum('marks')).get('total') or 0
+    return int(total)
 
 @login_required(login_url='login')
 def assignment_list(request, classroom_pk):
@@ -106,13 +106,14 @@ def add_question(request, pk):
         return redirect('assignment_detail', pk=pk)
         
     if request.method == 'POST':
-        form = QuestionForm(request.POST)
+        form = QuestionForm(request.POST, assignment=assignment)
         if form.is_valid():
             if assignment.is_quiz:
                 question = Question.objects.create(
                     assignment=assignment,
                     question_type=Question.QUESTION_TYPE_MCQ,
                     text=form.cleaned_data['question_text'],
+                    marks=form.cleaned_data['question_marks'],
                 )
                 opts = [
                     (form.cleaned_data['option1'], '1'),
@@ -128,10 +129,11 @@ def add_question(request, pk):
                     assignment=assignment,
                     question_type=Question.QUESTION_TYPE_QNA,
                     text=form.cleaned_data['question_text'],
+                    marks=form.cleaned_data['question_marks'],
                 )
             return redirect('assignment_detail', pk=pk)
     else:
-        form = QuestionForm()
+        form = QuestionForm(assignment=assignment)
     return render(request, 'assignments/add_question.html', {'form': form, 'assignment': assignment})
 
 @login_required(login_url='login')
@@ -195,7 +197,7 @@ def take_assignment(request, pk):
                         continue
                     StudentAnswer.objects.create(submission=submission, question=question, choice=choice)
                     if choice.is_correct:
-                        score += 1
+                        score += question.marks
 
             penalty_percent = 0
             if is_late and assignment.late_submission_policy == Assignment.LATE_POLICY_PENALTY:
@@ -204,7 +206,8 @@ def take_assignment(request, pk):
 
             submission.score = score
             submission.late_penalty_percent = penalty_percent
-            submission.save(update_fields=['score', 'late_penalty_percent'])
+            submission.graded_at = timezone.now()
+            submission.save(update_fields=['score', 'late_penalty_percent', 'graded_at'])
             draft.delete()
         else:
             submission = Submission.objects.create(
@@ -254,14 +257,40 @@ def submission_detail(request, pk):
     if not (is_teacher or is_student):
         return redirect('home')
         
-    if request.method == 'POST' and is_teacher:
-        feedback = request.POST.get('feedback')
-        submission.teacher_feedback = feedback
-        submission.save()
-        return redirect('submission_detail', pk=pk)
-        
     answers = submission.answers.select_related('question', 'choice').all() # type: ignore
     max_points = _assignment_max_points(submission.assignment)
+
+    if request.method == 'POST' and is_teacher:
+        assignment_feedback = request.POST.get('assignment_feedback', '').strip()
+        submission.teacher_feedback = assignment_feedback
+
+        if submission.assignment.is_quiz:
+            if not submission.graded_at:
+                submission.graded_at = timezone.now()
+            submission.save(update_fields=['teacher_feedback', 'graded_at'])
+            messages.success(request, 'Assignment feedback updated.')
+            return redirect('submission_detail', pk=pk)
+
+        total_score = 0
+        for answer in answers:
+            max_marks = answer.question.marks
+            raw_marks = request.POST.get(f'question_{answer.pk}_marks', '').strip()
+            try:
+                awarded_marks = int(raw_marks) if raw_marks != '' else 0
+            except ValueError:
+                awarded_marks = 0
+            awarded_marks = max(0, min(awarded_marks, max_marks))
+            answer.awarded_marks = awarded_marks
+            answer.teacher_feedback = request.POST.get(f'question_{answer.pk}_feedback', '').strip()
+            answer.save(update_fields=['awarded_marks', 'teacher_feedback'])
+            total_score += awarded_marks
+
+        submission.score = total_score
+        submission.graded_at = timezone.now()
+        submission.save(update_fields=['score', 'teacher_feedback', 'graded_at'])
+        messages.success(request, 'Submission graded successfully.')
+        return redirect('submission_detail', pk=pk)
+
     return render(request, 'assignments/submission_detail.html', {
         'submission': submission,
         'answers': answers,
@@ -329,7 +358,7 @@ def teacher_dashboard(request, classroom_pk):
     total_submissions = Submission.objects.filter(assignment__classroom=classroom).count()
     
     # Calculate average score
-    submissions = Submission.objects.filter(assignment__classroom=classroom, assignment__assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ)
+    submissions = Submission.objects.filter(assignment__classroom=classroom).filter(Q(assignment__assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ) | Q(graded_at__isnull=False))
     classroom_avg_score = 0
     if submissions.exists():
         # Calculate percentage for each submission, then average
@@ -350,7 +379,8 @@ def teacher_dashboard(request, classroom_pk):
         late_subs = subs.filter(is_late=True).count()
         max_score = _assignment_max_points(assignment)
         assignment_avg_score = 0
-        if assignment.is_quiz and subs.exists() and max_score > 0:
+        has_graded_submissions = assignment.is_quiz or subs.filter(graded_at__isnull=False).exists()
+        if subs.exists() and max_score > 0 and has_graded_submissions:
             # Calculate percentage for each submission in this assignment, then average
             percentages = []
             for sub in subs:
@@ -362,7 +392,7 @@ def teacher_dashboard(request, classroom_pk):
             'assignment': assignment,
             'total_submitted': subs.count(),
             'late_submissions': late_subs,
-            'avg_score': round(assignment_avg_score, 1) if assignment.is_quiz else None,
+            'avg_score': round(assignment_avg_score, 1) if has_graded_submissions else None,
         })
     
     return render(request, 'assignments/teacher_dashboard.html', {
@@ -383,7 +413,8 @@ def student_results(request):
     # Get all submissions for the student
     submissions = Submission.objects.filter(
         student=student,
-        assignment__assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ,
+    ).filter(
+        Q(assignment__assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ) | Q(graded_at__isnull=False)
     ).select_related('assignment', 'assignment__classroom').order_by('-submitted_at')
     
     # Group by classroom
@@ -396,7 +427,7 @@ def student_results(request):
             'avg_score': 0,
             'total_submissions': 0,
             'completed_quizzes': 0,
-            'available_quizzes': classroom.assignments.filter(assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ).count(),
+            'available_quizzes': classroom.assignments.count(),
             'completion_rate': 0,
         }
 
@@ -410,17 +441,17 @@ def student_results(request):
                 'avg_score': 0,
                 'total_submissions': 0,
                 'completed_quizzes': 0,
-                'available_quizzes': classroom.assignments.filter(assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ).count(),
+                'available_quizzes': classroom.assignments.count(),
                 'completion_rate': 0,
             }
         classroom_stats[classroom.id]['submissions'].append(submission)
-        classroom_stats[classroom.id]['completed_quiz_ids'].add(submission.assignment_id)
+        classroom_stats[classroom.id]['completed_quiz_ids'].add(submission.assignment.pk)
         classroom_stats[classroom.id]['total_submissions'] += 1
     
     # Calculate averages per classroom
     for stats in classroom_stats.values():
         stats['completed_quizzes'] = len(stats['completed_quiz_ids'])
-        stats['available_quizzes'] = stats['classroom'].assignments.filter(assignment_type=Assignment.ASSIGNMENT_TYPE_QUIZ).count()
+        stats['available_quizzes'] = stats['classroom'].assignments.count()
         stats['completion_rate'] = round((stats['completed_quizzes'] / stats['available_quizzes']) * 100, 1) if stats['available_quizzes'] else 0
 
         if stats['submissions']:

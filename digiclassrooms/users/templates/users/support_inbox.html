@@ -1,0 +1,80 @@
+{% extends 'users/base.html' %}
+{% block title %}Support Inbox - DigiClassroom{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold mb-1"><i class="fas fa-headset text-primary me-2"></i>Support Inbox</h2>
+        <p class="text-muted mb-0">Review complaints, questions, and account requests from students and teachers.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary btn-back">
+            <i class="fas fa-arrow-left me-2"></i>Back to Admin Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="{% url 'support_inbox' %}?status=open" class="card text-decoration-none h-100 {% if status_filter == 'open' %}border-primary{% endif %}">
+            <div class="card-body text-center">
+                <div class="text-muted small">Open</div>
+                <div class="display-6 fw-bold text-danger">{{ open_count }}</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'support_inbox' %}?status=in_progress" class="card text-decoration-none h-100 {% if status_filter == 'in_progress' %}border-primary{% endif %}">
+            <div class="card-body text-center">
+                <div class="text-muted small">In Progress</div>
+                <div class="display-6 fw-bold text-warning">{{ in_progress_count }}</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'support_inbox' %}?status=resolved" class="card text-decoration-none h-100 {% if status_filter == 'resolved' %}border-primary{% endif %}">
+            <div class="card-body text-center">
+                <div class="text-muted small">Resolved</div>
+                <div class="display-6 fw-bold text-success">{{ resolved_count }}</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'support_inbox' %}?status=closed" class="card text-decoration-none h-100 {% if status_filter == 'closed' %}border-primary{% endif %}">
+            <div class="card-body text-center">
+                <div class="text-muted small">Closed</div>
+                <div class="display-6 fw-bold text-secondary">{{ closed_count }}</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0">Tickets</h5>
+        <span class="badge bg-primary">{{ tickets|length }} shown</span>
+    </div>
+    <div class="card-body p-0">
+        {% if tickets %}
+            <div class="list-group list-group-flush">
+                {% for ticket in tickets %}
+                    <a href="{% url 'support_detail' ticket.pk %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <div class="fw-bold">{{ ticket.subject }}</div>
+                                <div class="text-muted small">{{ ticket.requester.username }} · {{ ticket.get_category_display }} · {{ ticket.created_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                            <span class="badge {% if ticket.status == 'open' %}bg-danger{% elif ticket.status == 'in_progress' %}bg-warning text-dark{% elif ticket.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ ticket.get_status_display }}
+                            </span>
+                        </div>
+                        <p class="text-muted mb-0 mt-2">{{ ticket.message|truncatewords:18 }}</p>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-muted">No support tickets in this view.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

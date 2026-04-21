@@ -38,6 +38,11 @@ class QuestionForm(forms.Form):
         label='Question',
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
+    question_marks = forms.IntegerField(
+        min_value=1,
+        label='Marks',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 1})
+    )
     option1 = forms.CharField(
         max_length=200, 
         label='Option 1',
@@ -60,8 +65,32 @@ class QuestionForm(forms.Form):
     )
     correct_option = forms.ChoiceField(
         choices=[('1', 'Option 1'), ('2', 'Option 2'), ('3', 'Option 3'), ('4', 'Option 4')], 
+        required=False,
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
     )
+
+    def __init__(self, *args, assignment=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.assignment = assignment
+
+        is_quiz = bool(assignment and assignment.is_quiz)
+        for field_name in ('option1', 'option2', 'option3', 'option4', 'correct_option'):
+            self.fields[field_name].required = is_quiz
+
+    def clean(self):
+        cleaned = super().clean()
+
+        if self.assignment and not self.assignment.is_quiz:
+            return cleaned
+
+        options = [cleaned.get('option1'), cleaned.get('option2'), cleaned.get('option3'), cleaned.get('option4')]
+        if any(not option for option in options):
+            raise forms.ValidationError('All answer options are required for quiz questions.')
+
+        if not cleaned.get('correct_option'):
+            raise forms.ValidationError('Select the correct answer for the quiz question.')
+
+        return cleaned
 
 
 class DeadlineEventForm(forms.ModelForm):

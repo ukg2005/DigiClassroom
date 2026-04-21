@@ -11,12 +11,31 @@
             <div class="card-body p-4">
                 <form method="post">
                     {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
                     
                     <div class="mb-4">
                         <label class="form-label fw-bold">
                             <i class="fas fa-comment-dots me-2"></i>{% if assignment.is_quiz %}Question Text{% else %}Prompt Text{% endif %}
                         </label>
-                        <input type="text" name="question_text" class="form-control form-control-lg" placeholder="Enter your question here" required>
+                        <input type="text" name="question_text" class="form-control form-control-lg" placeholder="Enter your question here" value="{{ form.question_text.value|default_if_none:'' }}" required>
+                        {% if form.question_text.errors %}
+                            <div class="text-danger small mt-1">{{ form.question_text.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-bullseye me-2"></i>Marks
+                        </label>
+                        <input type="number" name="question_marks" class="form-control form-control-lg" min="1" value="{{ form.question_marks.value|default_if_none:'1' }}" required>
+                        {% if form.question_marks.errors %}
+                            <div class="text-danger small mt-1">{{ form.question_marks.errors }}</div>
+                        {% endif %}
                     </div>
 
                     {% if assignment.is_quiz %}
@@ -28,19 +47,23 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Option 1</label>
-                                        <input type="text" name="option1" class="form-control" placeholder="First option" required>
+                                        <input type="text" name="option1" class="form-control" placeholder="First option" value="{{ form.option1.value|default_if_none:'' }}" required>
+                                        {% if form.option1.errors %}<div class="text-danger small mt-1">{{ form.option1.errors }}</div>{% endif %}
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Option 2</label>
-                                        <input type="text" name="option2" class="form-control" placeholder="Second option" required>
+                                        <input type="text" name="option2" class="form-control" placeholder="Second option" value="{{ form.option2.value|default_if_none:'' }}" required>
+                                        {% if form.option2.errors %}<div class="text-danger small mt-1">{{ form.option2.errors }}</div>{% endif %}
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Option 3</label>
-                                        <input type="text" name="option3" class="form-control" placeholder="Third option" required>
+                                        <input type="text" name="option3" class="form-control" placeholder="Third option" value="{{ form.option3.value|default_if_none:'' }}" required>
+                                        {% if form.option3.errors %}<div class="text-danger small mt-1">{{ form.option3.errors }}</div>{% endif %}
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Option 4</label>
-                                        <input type="text" name="option4" class="form-control" placeholder="Fourth option" required>
+                                        <input type="text" name="option4" class="form-control" placeholder="Fourth option" value="{{ form.option4.value|default_if_none:'' }}" required>
+                                        {% if form.option4.errors %}<div class="text-danger small mt-1">{{ form.option4.errors }}</div>{% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -56,6 +79,9 @@
                                 <option value="3">Option 3</option>
                                 <option value="4">Option 4</option>
                             </select>
+                            {% if form.correct_option.errors %}
+                                <div class="text-danger small mt-1">{{ form.correct_option.errors }}</div>
+                            {% endif %}
                         </div>
                     {% else %}
                         <div class="alert alert-info">

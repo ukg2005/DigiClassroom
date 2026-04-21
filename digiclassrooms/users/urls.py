@@ -7,6 +7,10 @@ urlpatterns = [
     path('login/', views.login_user, name='login'),
     path('logout/', views.logout_user, name='logout'),
     path('register/', views.register_user, name='register'),
+    path('profile/', views.profile_page, name='profile'),
+    path('support/', views.support_create, name='support_create'),
+    path('support/inbox/', views.support_inbox, name='support_inbox'),
+    path('support/<int:pk>/', views.support_detail, name='support_detail'),
     path('change_password/', auth_views.PasswordChangeView.as_view(
         template_name='users/change_password.html',
         form_class=CustomPasswordChangeForm

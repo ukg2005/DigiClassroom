@@ -65,7 +65,7 @@
                         <i class="fas fa-trash me-2"></i>Delete
                     </button>
                 </form>
-                <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-secondary">
+                <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-outline-secondary btn-back">
                     <i class="fas fa-arrow-left me-2"></i>Back to List
                 </a>
             </div>
@@ -81,7 +81,10 @@
                 <ol class="list-group list-group-numbered">
                 {% for q in questions %}
                     <li class="list-group-item">
-                        <div class="fw-bold mb-2">{{ q.text }}</div>
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                            <div class="fw-bold">{{ q.text }}</div>
+                            <span class="badge bg-secondary">{{ q.marks }} mark{{ q.marks|pluralize }}</span>
+                        </div>
                         {% if assignment.is_quiz %}
                             <ul class="list-unstyled ms-3">
                             {% for choice in q.choices.all %}
@@ -124,7 +127,11 @@
                 {% if assignment.is_quiz %}
                     <div class="display-4 fw-bold text-success mb-3">{{ submission.score }}/{{ max_points }}</div>
                 {% else %}
-                    <div class="h5 text-secondary mb-3">Submitted (Ungraded Q&A)</div>
+                    {% if submission.graded_at %}
+                        <div class="display-4 fw-bold text-success mb-3">{{ submission.score }}/{{ max_points }}</div>
+                    {% else %}
+                        <div class="h5 text-secondary mb-3">Submitted Q&A Pending Review</div>
+                    {% endif %}
                 {% endif %}
                 {% if submission.is_late %}
                     <p class="text-warning mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Submitted late{% if submission.late_penalty_percent %} ({{ submission.late_penalty_percent }}% penalty applied){% endif %}</p>
@@ -169,8 +176,11 @@
     {% endif %}
 
     {% if submissions and submissions|length > 1 %}
-        <div class="card mt-4">
-            <div class="card-header"><i class="fas fa-history me-2"></i>Submission History</div>
+        <details class="card mt-4" open>
+            <summary class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-history me-2"></i>Submission History</span>
+                <span class="text-muted small">Click to collapse</span>
+            </summary>
             <ul class="list-group list-group-flush">
                 {% for past in submissions %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -187,7 +197,7 @@
                     </li>
                 {% endfor %}
             </ul>
-        </div>
+        </details>
     {% endif %}
 
 {% endif %}

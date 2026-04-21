@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
-from .models import Profile
+from .models import Profile, SupportTicket, SupportTicketMessage
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(
@@ -56,3 +56,44 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         self.fields['old_password'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter current password'})
         self.fields['new_password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Enter new password'})
         self.fields['new_password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Confirm new password'})
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name']
+        widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'you@example.com'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
+        }
+
+
+class SupportTicketForm(forms.ModelForm):
+    class Meta:
+        model = SupportTicket
+        fields = ['category', 'subject', 'message']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'subject': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Brief summary of what you need help with'}),
+            'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Describe the issue, complaint, or question'}),
+        }
+
+
+class SupportReplyForm(forms.ModelForm):
+    class Meta:
+        model = SupportTicket
+        fields = ['status', 'admin_reply']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'admin_reply': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Write your reply to the user'}),
+        }
+
+
+class SupportMessageForm(forms.ModelForm):
+    class Meta:
+        model = SupportTicketMessage
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Write your reply'}),
+        }

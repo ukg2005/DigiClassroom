@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from classrooms.models import Classroom
 from typing import TYPE_CHECKING
+from urllib.parse import parse_qs, urlparse
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -24,27 +25,30 @@ class Lecture(models.Model):
     def get_video_id(self):
         if not self.youtube_link:
             return ''
-        
-        url = self.youtube_link.strip()
+
+        raw = self.youtube_link.strip()
+        parsed = urlparse(raw)
+        host = parsed.netloc.lower().replace('www.', '')
+        path_parts = [part for part in parsed.path.split('/') if part]
+
         video_id = ''
-        
-        if 'youtu.be/' in url:
-            video_id = url.split('youtu.be/')[-1]
-            if '/' in video_id:
-                video_id = video_id.split('/')[0]
-            video_id = video_id.split('?')[0].split('&')[0].split('#')[0]
-        elif 'youtube.com/watch' in url:
-            if 'v=' in url:
-                video_id = url.split('v=')[1]
-                video_id = video_id.split('&')[0].split('#')[0]
-        elif 'youtube.com/embed/' in url:
-            video_id = url.split('embed/')[-1]
-            video_id = video_id.split('?')[0].split('/')[0]
-        elif 'youtube.com/v/' in url:
-            video_id = url.split('v/')[-1]
-            video_id = video_id.split('?')[0].split('/')[0]
-            
-        return video_id.strip()
+
+        if host == 'youtu.be' and path_parts:
+            video_id = path_parts[0]
+        elif host in {'youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'}:
+            if path_parts and path_parts[0] == 'watch':
+                query = parse_qs(parsed.query)
+                video_id = (query.get('v') or [''])[0]
+            elif path_parts and path_parts[0] in {'embed', 'v', 'shorts', 'live'} and len(path_parts) > 1:
+                video_id = path_parts[1]
+
+        video_id = (video_id or '').strip()
+
+        # YouTube video IDs are 11 characters in practice; reject malformed IDs.
+        if len(video_id) != 11:
+            return ''
+
+        return video_id
 
 class LectureComment(models.Model):
     lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='comments')

@@ -57,6 +57,7 @@ class Question(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='questions')
     question_type = models.CharField(max_length=10, choices=QUESTION_TYPE_CHOICES, default=QUESTION_TYPE_MCQ)
     text = models.CharField(max_length=500)
+    marks = models.PositiveIntegerField(default=1)
     
     if TYPE_CHECKING:
         id: int
@@ -79,6 +80,7 @@ class Submission(models.Model):
     attempt_number = models.PositiveIntegerField(default=1)
     score = models.IntegerField(default=0)
     teacher_feedback = models.TextField(blank=True, null=True)
+    graded_at = models.DateTimeField(null=True, blank=True)
     text_response = models.TextField(blank=True)
     is_late = models.BooleanField(default=False)
     late_penalty_percent = models.PositiveIntegerField(default=0)
@@ -96,6 +98,8 @@ class StudentAnswer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=True, blank=True)
     text_response = models.TextField(blank=True)
+    awarded_marks = models.PositiveIntegerField(default=0)
+    teacher_feedback = models.TextField(blank=True, default='')
 
 
 class SubmissionDraft(models.Model):

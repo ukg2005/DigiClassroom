@@ -33,12 +33,12 @@
                         {% endif %}
                     </h5>
                     <div class="mb-3">
-                        <a href="{{ lecture.youtube_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger w-100 mb-2">
-                            <i class="fab fa-youtube me-2"></i>Watch on YouTube
+                        <a href="{% url 'lecture_detail' lecture.pk %}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="fas fa-comments me-2"></i>Open Discussion
                         </a>
                     </div>
-                    <a href="{% url 'lecture_detail' lecture.pk %}" class="btn btn-primary w-100">
-                        <i class="fas fa-comments me-2"></i>View Discussion
+                    <a href="{{ lecture.youtube_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-danger w-100">
+                        <i class="fab fa-youtube me-2"></i>Open on YouTube
                     </a>
                     {% if is_teacher %}
                     <div class="d-flex gap-2 mt-2">
