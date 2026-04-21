@@ -1,5 +1,12 @@
+from datetime import timedelta
+import random
+import time
+
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
+from django.db import OperationalError, close_old_connections, connection
+from django.utils import timezone
+
 from classrooms.models import Classroom
 from lectures.models import Lecture, LectureComment
 from notices.models import Notice, NoticeComment
@@ -8,397 +15,483 @@ from users.models import Profile
 
 
 class Command(BaseCommand):
-    help = 'Creates dummy data for testing the DigiClassroom application'
+    help = 'Creates realistic semester-based dummy data for demo presentation'
 
-    def handle(self, *args, **kwargs):
-        self.stdout.write(self.style.WARNING('Creating dummy data...'))
-        
-        # Create users
-        self.stdout.write('Creating users...')
-        
-        # Create multiple teachers
-        teachers = []
-        teacher_data = [
-            ('teacher1', 'John', 'Smith', 'john@example.com'),
-            ('teacher2', 'Sarah', 'Johnson', 'sarah@example.com'),
-            ('teacher3', 'Michael', 'Brown', 'michael@example.com'),
-            ('teacher4', 'Emily', 'Davis', 'emily@example.com'),
-            ('teacher5', 'Robert', 'Miller', 'robert@example.com'),
-            ('teacher6', 'Jennifer', 'Wilson', 'jennifer@example.com'),
-        ]
-        
-        for username, first, last, email in teacher_data:
-            teacher, created = User.objects.get_or_create(
-                username=username,
-                defaults={
-                    'email': email,
-                    'first_name': first,
-                    'last_name': last
-                }
-            )
-            if created:
-                teacher.set_password('password123')
-                teacher.save()
-                profile, _ = Profile.objects.get_or_create(user=teacher)
-                profile.is_teacher = True
-                profile.save()
-                self.stdout.write(self.style.SUCCESS(f'Created teacher: {teacher.username}'))
-            else:
-                self.stdout.write(f'  Teacher {teacher.username} already exists')
-            teachers.append(teacher)
-        
-        # Create students
-        students = []
-        student_data = [
-            ('student1', 'Alice', 'Johnson', 'alice@example.com'),
-            ('student2', 'Bob', 'Williams', 'bob@example.com'),
-            ('student3', 'Charlie', 'Brown', 'charlie@example.com'),
-        ]
-        
-        for username, first, last, email in student_data:
-            student, created = User.objects.get_or_create(
-                username=username,
-                defaults={
-                    'email': email,
-                    'first_name': first,
-                    'last_name': last
-                }
-            )
-            if created:
-                student.set_password('password123')
-                student.save()
-                profile, _ = Profile.objects.get_or_create(user=student)
-                profile.is_teacher = False
-                profile.save()
-                self.stdout.write(self.style.SUCCESS(f'Created student: {student.username}'))
-            else:
-                self.stdout.write(f'  Student {student.username} already exists')
-            students.append(student)
-        
-        # Create classrooms
-        self.stdout.write('\nCreating classrooms...')
-        
-        classroom_data = [
-            ('CS101 - Introduction to Computer Science', 'Learn the fundamentals of programming and computer science'),
-            ('MATH201 - Linear Algebra', 'Explore vectors, matrices, and linear transformations'),
-            ('PHYS301 - Classical Mechanics', 'Study motion, forces, and energy in classical physics'),
-            ('DATA401 - Data Structures and Algorithms', 'Master essential data structures and algorithm design patterns'),
-            ('WEB501 - Full Stack Web Development', 'Build modern web applications using frontend and backend technologies'),
-            ('DB601 - Database Design and SQL', 'Design efficient databases and master SQL queries'),
-        ]
-        
-        classrooms = []
-        for idx, (name, desc) in enumerate(classroom_data):
-            teacher = teachers[idx % len(teachers)]
-            classroom, created = Classroom.objects.get_or_create(
-                name=name,
-                defaults={
-                    'teacher': teacher,
-                    'description': desc
-                }
-            )
-            if created:
-                # Add students to classroom
-                classroom.students.add(*students)
-                self.stdout.write(self.style.SUCCESS(f'Created classroom: {classroom.name}'))
-            else:
-                self.stdout.write(f'  Classroom {classroom.name} already exists')
-            classrooms.append(classroom)
-        
-        # Subject-specific content mapping
-        subject_content = {
-            'CS101 - Introduction to Computer Science': {
-                'lectures': [
-                    ('What is Computer Science?', 'https://www.youtube.com/watch?v=kqtD5dpn9C8'),
-                    ('History of Computing', 'https://www.youtube.com/watch?v=Z1Yd7upQsXY'),
-                    ('Introduction to Algorithms', 'https://www.youtube.com/watch?v=PqFKRqpHrjw'),
-                    ('Binary and Number Systems', 'https://www.youtube.com/watch?v=NSbOtYzIQI0'),
-                    ('Boolean Logic Basics', 'https://www.youtube.com/watch?v=JeznW_7DlB0'),
-                ],
-                'notices': [
-                    ('Welcome to CS101!', 'Welcome to Introduction to Computer Science! This course covers fundamental concepts in computer science.'),
-                    ('Assignment 1 Released', 'Assignment 1 on Boolean Logic is now available. Due by next Friday.'),
-                    ('Midterm Exam Schedule', 'The midterm exam will be held next month. Start preparing now!'),
-                ],
-                'assignments': [
-                    {
-                        'title': 'Boolean Logic Quiz',
-                        'questions': [
-                            {'text': 'What is the output of (True AND False)?', 'choices': [('True', False), ('False', True), ('None', False), ('Error', False)]},
-                            {'text': 'Which gate produces output 1 when all inputs are 1?', 'choices': [('OR', False), ('AND', True), ('NOT', False), ('XOR', False)]},
-                            {'text': 'What does OR gate do?', 'choices': [('Output 1 if any input is 1', True), ('Output 1 only if all are 1', False), ('Inverts input', False), ('Compares inputs', False)]},
-                        ]
-                    },
-                    {
-                        'title': 'Number Systems Assessment',
-                        'questions': [
-                            {'text': 'What is 1010 in decimal?', 'choices': [('8', False), ('10', True), ('12', False), ('16', False)]},
-                            {'text': 'What is 255 in hexadecimal?', 'choices': [('FF', True), ('FE', False), ('FFF', False), ('100', False)]},
-                        ]
-                    },
-                ]
-            },
-            'MATH201 - Linear Algebra': {
-                'lectures': [
-                    ('Introduction to Vectors', 'https://www.youtube.com/watch?v=fNk_zzaMoSY'),
-                    ('Matrix Operations', 'https://www.youtube.com/watch?v=IZcyz27-a8w'),
-                    ('Determinants and Inverses', 'https://www.youtube.com/watch?v=Ip3X9LOh_90'),
-                    ('Eigenvalues and Eigenvectors', 'https://www.youtube.com/watch?v=PFDu9oVAE-g'),
-                    ('Linear Transformations', 'https://www.youtube.com/watch?v=kYB8IZa7TL8'),
-                ],
-                'notices': [
-                    ('Welcome to Linear Algebra!', 'Linear Algebra is the foundation for advanced mathematics and computer science. Let\'s explore vectors and matrices together.'),
-                    ('Problem Set 1 Due', 'Problem Set 1 covering vectors and basic matrix operations is due this Friday.'),
-                    ('Office Hours Extended', 'Due to high demand, office hours have been extended to Tuesday and Thursday evenings.'),
-                ],
-                'assignments': [
-                    {
-                        'title': 'Vector Operations Quiz',
-                        'questions': [
-                            {'text': 'What is the dot product of (1,2) and (3,4)?', 'choices': [('7', False), ('11', True), ('9', False), ('12', False)]},
-                            {'text': 'What is the magnitude of vector (3,4)?', 'choices': [('5', True), ('7', False), ('sqrt(7)', False), ('25', False)]},
-                            {'text': 'Are vectors (1,2) and (2,4) orthogonal?', 'choices': [('Yes', False), ('No', True), ('Cannot determine', False), ('Undefined', False)]},
-                        ]
-                    },
-                    {
-                        'title': 'Matrix Multiplication Test',
-                        'questions': [
-                            {'text': 'What is the result of multiplying a 2x3 matrix with a 3x2 matrix?', 'choices': [('2x2', True), ('3x3', False), ('2x3', False), ('Cannot multiply', False)]},
-                        ]
-                    },
-                ]
-            },
-            'PHYS301 - Classical Mechanics': {
-                'lectures': [
-                    ('Kinematics and Motion', 'https://www.youtube.com/watch?v=Y0nnzS_5IVc'),
-                    ('Newton\'s Laws of Motion', 'https://www.youtube.com/watch?v=VzZdvVsYnB4'),
-                    ('Energy and Work', 'https://www.youtube.com/watch?v=w-P-K9JBbq0'),
-                    ('Momentum and Collisions', 'https://www.youtube.com/watch?v=cJsqBXfVh5s'),
-                    ('Rotational Motion', 'https://www.youtube.com/watch?v=sN6tMVqo7Ow'),
-                ],
-                'notices': [
-                    ('Welcome to Classical Mechanics!', 'This course explores the motion of objects and forces. Get ready for some interesting experiments!'),
-                    ('Lab Report 1 Guidelines', 'Lab Report 1 submission guidelines are now available. Please follow the format provided.'),
-                    ('Exam Prep Session', 'Join me for an exam preparation session on Friday at 4 PM in the physics lab.'),
-                ],
-                'assignments': [
-                    {
-                        'title': 'Newton\'s Laws Quiz',
-                        'questions': [
-                            {'text': 'What does Newton\'s First Law state?', 'choices': [('F = ma', False), ('Objects continue in motion unless acted upon', True), ('Action equals reaction', False), ('Energy is conserved', False)]},
-                            {'text': 'If F = ma, and a = 0, what can we conclude?', 'choices': [('F is zero or object is at rest', True), ('Object is moving', False), ('No force exists', False), ('Mass is zero', False)]},
-                            {'text': 'For every action there is an equal and opposite reaction. Which law?', 'choices': [('First', False), ('Second', False), ('Third', True), ('Fourth', False)]},
-                        ]
-                    },
-                    {
-                        'title': 'Motion and Forces Problem Set',
-                        'questions': [
-                            {'text': 'An object accelerates at 5 m/s^2 with a force of 50 N. What is its mass?', 'choices': [('5 kg', False), ('10 kg', True), ('25 kg', False), ('250 kg', False)]},
-                            {'text': 'What is the SI unit of work?', 'choices': [('Newton', False), ('Joule', True), ('Watt', False), ('Pascal', False)]},
-                        ]
-                    },
-                ]
-            },
-            'DATA401 - Data Structures and Algorithms': {
-                'lectures': [
-                    ('Arrays and Linked Lists', 'https://www.youtube.com/watch?v=WwIkUjZOTco'),
-                    ('Stacks and Queues', 'https://www.youtube.com/watch?v=wjI1WNcIntg'),
-                    ('Trees and Binary Search Trees', 'https://www.youtube.com/watch?v=xLVCHKAUhGU'),
-                    ('Graphs and Graph Traversal', 'https://www.youtube.com/watch?v=tWVWeAqZ0WU'),
-                    ('Sorting and Searching Algorithms', 'https://www.youtube.com/watch?v=iqlTj3SQpM8'),
-                ],
-                'notices': [
-                    ('Welcome to Data Structures!', 'This course will teach you the building blocks of efficient algorithms. Master these concepts!'),
-                    ('Coding Challenge 1 Released', 'Implement a stack using arrays. Submit your solution on the assignment portal.'),
-                    ('Big O Notation Review', 'Please review Big O notation from online resources before next class.'),
-                ],
-                'assignments': [
-                    {
-                        'title': 'Data Structures Fundamentals',
-                        'questions': [
-                            {'text': 'What is the time complexity of accessing an element in an array?', 'choices': [('O(n)', False), ('O(1)', True), ('O(log n)', False), ('O(n²)', False)]},
-                            {'text': 'Which data structure follows LIFO principle?', 'choices': [('Queue', False), ('Stack', True), ('Array', False), ('Link', False)]},
-                            {'text': 'What is the worst case for binary search?', 'choices': [('O(1)', False), ('O(n)', False), ('O(log n)', True), ('O(n²)', False)]},
-                        ]
-                    },
-                    {
-                        'title': 'Algorithm Analysis Quiz',
-                        'questions': [
-                            {'text': 'Bubble sort has a best-case complexity of:', 'choices': [('O(n)', True), ('O(n²)', False), ('O(log n)', False), ('O(n log n)', False)]},
-                            {'text': 'Which is NOT a sorting algorithm?', 'choices': [('Merge Sort', False), ('Quick Sort', False), ('Binary Search', True), ('Heap Sort', False)]},
-                        ]
-                    },
-                ]
-            },
-            'WEB501 - Full Stack Web Development': {
-                'lectures': [
-                    ('HTML Fundamentals', 'https://www.youtube.com/watch?v=qz0aGYrrlMU'),
-                    ('CSS Styling and Layouts', 'https://www.youtube.com/watch?v=OXGznpKZ_sA'),
-                    ('JavaScript Basics', 'https://www.youtube.com/watch?v=W6NZfCO5tTE'),
-                    ('Backend Development with Django', 'https://www.youtube.com/watch?v=jBzwzrDvZ18'),
-                    ('Databases and SQL', 'https://www.youtube.com/watch?v=FQqNeGAI5UE'),
-                ],
-                'notices': [
-                    ('Welcome to Full Stack Development!', 'Learn to build complete web applications. This is an intensive and practical course.'),
-                    ('Project 1: Personal Portfolio', 'Create a personal portfolio website using HTML, CSS, and JavaScript. Due in 2 weeks.'),
-                    ('JavaScript Frameworks Discussion', 'We will start learning React next week. Prepare by reviewing ES6 concepts.'),
-                ],
-                'assignments': [
-                    {
-                        'title': 'HTML and CSS Basics',
-                        'questions': [
-                            {'text': 'What does HTML stand for?', 'choices': [('Hyper Text Markup Language', True), ('High Tech Modern Language', False), ('Home Tool Markup Language', False), ('Hyperlinks and Text Markup', False)]},
-                            {'text': 'Which CSS property changes text color?', 'choices': [('color', True), ('text-color', False), ('font-color', False), ('text-style', False)]},
-                            {'text': 'What is the purpose of class selectors in CSS?', 'choices': [('Style multiple elements', True), ('Create new elements', False), ('Define page layout', False), ('Set fonts', False)]},
-                        ]
-                    },
-                    {
-                        'title': 'JavaScript and Backend Quiz',
-                        'questions': [
-                            {'text': 'What is the correct way to declare a variable in JavaScript?', 'choices': [('var x = 5;', True), ('x = 5;', False), ('int x = 5;', False), ('declare x = 5;', False)]},
-                            {'text': 'Which framework is for frontend development?', 'choices': [('React', True), ('Django', False), ('Flask', False), ('Spring', False)]},
-                        ]
-                    },
-                ]
-            },
-            'DB601 - Database Design and SQL': {
-                'lectures': [
-                    ('Database Basics and Design', 'https://www.youtube.com/watch?v=4cWkVbC2bNE'),
-                    ('Relational Database Model', 'https://www.youtube.com/watch?v=jQ0C-yKXtGQ'),
-                    ('SELECT Statements and Queries', 'https://www.youtube.com/watch?v=0-ZhV0Ev1Vg'),
-                    ('JOINs and Subqueries', 'https://www.youtube.com/watch?v=F_I0EJfK_20'),
-                    ('Normalization and Optimization', 'https://www.youtube.com/watch?v=n0CJYv07Uxs'),
-                ],
-                'notices': [
-                    ('Welcome to Database Design!', 'SQL is a critical skill for data management. Let\'s master database design and queries.'),
-                    ('SQL Practice Environment Ready', 'The SQL practice environment is now available. Start with the basic queries tutorial.'),
-                    ('Normalization Assignment', 'Normalize a given database schema and submit your design document by next Wednesday.'),
-                ],
-                'assignments': [
-                    {
-                        'title': 'SQL Basics Quiz',
-                        'questions': [
-                            {'text': 'Which SQL statement is used to retrieve data?', 'choices': [('SELECT', True), ('GET', False), ('FETCH', False), ('RETRIEVE', False)]},
-                            {'text': 'What does PRIMARY KEY ensure?', 'choices': [('Uniqueness and non-null', True), ('Data encryption', False), ('Faster queries', False), ('Automatic backup', False)]},
-                            {'text': 'Which JOIN returns all rows from the left table?', 'choices': [('INNER JOIN', False), ('LEFT JOIN', True), ('RIGHT JOIN', False), ('FULL JOIN', False)]},
-                        ]
-                    },
-                    {
-                        'title': 'Database Design and Normalization',
-                        'questions': [
-                            {'text': 'What is the main goal of normalization?', 'choices': [('Reduce redundancy', True), ('Increase performance', False), ('Create more tables', False), ('Add constraints', False)]},
-                            {'text': 'How many tables would you create for a one-to-many relationship?', 'choices': [('1', False), ('2', True), ('3', False), ('Depends on data', False)]},
-                        ]
-                    },
-                ]
-            }
-        }
-        
-        # Create lectures
-        self.stdout.write('\nCreating lectures...')
-        
-        for classroom in classrooms:
-            lectures = subject_content[classroom.name]['lectures']
-            for title, url in lectures:
-                lecture, created = Lecture.objects.get_or_create(
-                    classroom=classroom,
-                    title=title,
-                    defaults={
-                        'youtube_link': url
-                    }
+    DUMMY_PASSWORD = 'demo12345'
+
+    SUBJECTS_BY_SEMESTER = {
+        1: [
+            ('CS1101', 'Engineering Mathematics I'),
+            ('CS1102', 'Green Chemistry'),
+            ('CS1103', 'English'),
+            ('CS1104', 'Computer Programming Using C'),
+            ('CS1105', 'IT Essentials'),
+        ],
+        2: [
+            ('CS1201', 'Engineering Mathematics II'),
+            ('CS1202', 'Engineering Physics'),
+            ('CS1203', 'Elements of Electronics Engineering'),
+            ('CS1204', 'Data Structures Using C'),
+            ('CS1205', 'Digital Logic Design'),
+        ],
+        3: [
+            ('CS2101', 'Discrete Mathematical Structures'),
+            ('CS2102', 'Computer Organization and Architecture'),
+            ('CS2103', 'Probability, Statistics and Queuing Theory'),
+            ('CS2104', 'Operating Systems'),
+            ('CS2105', 'Object Oriented Programming Through Java'),
+            ('CS2109', 'Intellectual Property Rights'),
+            ('CS2110', 'Environmental Science'),
+        ],
+        4: [
+            ('CS2201', 'Microprocessors'),
+            ('CS2202', 'Design and Analysis of Algorithms'),
+            ('CS2203', 'Database Management Systems'),
+            ('CS2204', 'Formal Languages & Automata Theory'),
+            ('CS2205', 'Managerial Economics'),
+            ('CS2208', 'Web Technologies'),
+            ('CS2209', 'Professional Ethics & Universal Human Values'),
+        ],
+        5: [
+            ('CS3101', 'Data Communication and Computer Networks'),
+            ('CS3102', 'Compiler Design'),
+            ('CS3103', 'Artificial Intelligence'),
+            ('CS3104', 'Data Warehousing and Data Mining'),
+            ('CS3105', 'Python Programming'),
+        ],
+        6: [
+            ('CS3201', 'Object Oriented Software Engineering'),
+            ('CS3202', 'Machine Learning'),
+            ('CS3203', 'Cryptography & Network Security'),
+            ('CS3204', 'Sensor Networks'),
+            ('CS3205', 'Embedded Systems'),
+        ],
+    }
+
+    REAL_TEACHER_USERNAMES = [
+        ('rajeshkumar', 'Rajesh', 'Kumar'),
+        ('priyavenkataraman', 'Priya', 'Venkataraman'),
+        ('sureshnaidu', 'Suresh', 'Naidu'),
+        ('anithareddy', 'Anitha', 'Reddy'),
+    ]
+
+    REAL_STUDENT_USERNAMES = [
+        ('udaykiran', 'Uday', 'Kiran'),
+        ('karthik', 'Karthik', ''),
+        ('sarathchandra', 'Sarath', 'Chandra'),
+        ('varunkalidindi', 'Varun', 'Kalidindi'),
+        ('sudharshanpaul', 'Sudharshan', 'Paul'),
+    ]
+
+    EXTRA_TEACHER_NAMES = [
+        ('teacher05', 'Aparna', 'Iyer'),
+        ('teacher06', 'Vikram', 'Rao'),
+        ('teacher07', 'Nikhil', 'Mehta'),
+        ('teacher08', 'Keerthi', 'Menon'),
+        ('teacher09', 'Harish', 'Patel'),
+        ('teacher10', 'Meghana', 'Sharma'),
+        ('teacher11', 'Ravi', 'Teja'),
+        ('teacher12', 'Divya', 'Srinivas'),
+        ('teacher13', 'Arjun', 'Bose'),
+    ]
+
+    NOTICE_TEMPLATES = [
+        ('Class Schedule Update', 'Please note the revised class timing for this week. Check timetable and LMS calendar.'),
+        ('Assignment Reminder', 'Complete the latest assignment before the due date. Late submissions may incur penalty.'),
+        ('Lab Session Instructions', 'Carry your lab notebook and complete pre-lab preparation before session starts.'),
+        ('Assessment Update', 'A short quiz will be conducted in the upcoming class based on recent topics.'),
+    ]
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--dummy-students',
+            type=int,
+            default=100,
+            help='Number of additional dummy students to create (default: 100)',
+        )
+
+    def handle(self, *args, **options):
+        rng = random.Random(20260421)
+        dummy_student_count = max(0, int(options['dummy_students']))
+
+        self.stdout.write(self.style.WARNING('Creating realistic semester-based dummy data...'))
+        self._configure_sqlite_busy_timeout()
+
+        teachers = self._run_with_retry(self._create_teachers, 'Create teachers')
+        students_by_sem = self._run_with_retry(lambda: self._create_students(dummy_student_count), 'Create students')
+        classrooms_by_sem = self._run_with_retry(lambda: self._create_classrooms(teachers), 'Create classrooms')
+        self._run_with_retry(lambda: self._enroll_students(students_by_sem, classrooms_by_sem), 'Enroll students')
+        self._run_with_retry(lambda: self._populate_content(classrooms_by_sem, students_by_sem, rng), 'Populate classroom content')
+
+        self.stdout.write(self.style.SUCCESS('\nData generation complete.'))
+        self.stdout.write(self.style.SUCCESS(f'Dummy password for generated teacher/student accounts: {self.DUMMY_PASSWORD}'))
+        self.stdout.write('Real teacher usernames: rajeshkumar, priyavenkataraman, sureshnaidu, anithareddy')
+        self.stdout.write('Real student usernames: udaykiran, karthik, sarathchandra, varunkalidindi, sudharshanpaul')
+
+    def _configure_sqlite_busy_timeout(self):
+        if connection.vendor != 'sqlite':
+            return
+        with connection.cursor() as cursor:
+            cursor.execute('PRAGMA busy_timeout = 30000')
+
+    def _run_with_retry(self, func, label, retries=4, base_delay=0.7):
+        for attempt in range(1, retries + 1):
+            try:
+                return func()
+            except OperationalError as exc:
+                is_locked = 'database is locked' in str(exc).lower()
+                if not is_locked or attempt == retries:
+                    raise
+
+                wait_seconds = base_delay * attempt
+                self.stdout.write(
+                    self.style.WARNING(
+                        f'{label}: SQLite database is locked. Retrying in {wait_seconds:.1f}s '
+                        f'(attempt {attempt}/{retries})...'
+                    )
                 )
-                if created:
-                    self.stdout.write(self.style.SUCCESS(f'  Created lecture: {title}'))
-                    
-                    # Add some comments to lectures
-                    if students:
+                close_old_connections()
+                time.sleep(wait_seconds)
+
+    def _ensure_profile(self, user, is_teacher):
+        profile, _ = Profile.objects.get_or_create(user=user)
+        profile.is_teacher = is_teacher
+        if user.is_superuser:
+            profile.is_admin = True
+        profile.save(update_fields=['is_teacher', 'is_admin', 'roll_no'])
+        return profile
+
+    def _create_teachers(self):
+        teachers = []
+        teacher_specs = self.REAL_TEACHER_USERNAMES + self.EXTRA_TEACHER_NAMES
+        for username, first_name, last_name in teacher_specs:
+            email = f'{username}@demo.college.edu'
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'email': email,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                },
+            )
+            if created:
+                user.set_password(self.DUMMY_PASSWORD)
+            else:
+                user.email = user.email or email
+                user.first_name = user.first_name or first_name
+                user.last_name = user.last_name or last_name
+            user.save()
+            self._ensure_profile(user, is_teacher=True)
+            teachers.append(user)
+        self.stdout.write(self.style.SUCCESS(f'Created/updated {len(teachers)} teachers.'))
+        return teachers
+
+    def _create_students(self, dummy_student_count):
+        students_by_sem = {sem: [] for sem in self.SUBJECTS_BY_SEMESTER.keys()}
+
+        # Place real students into final semesters for live demo value.
+        real_sem_map = [5, 5, 6, 6, 6]
+        for (username, first_name, last_name), semester in zip(self.REAL_STUDENT_USERNAMES, real_sem_map):
+            email = f'{username}@demo.college.edu'
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'email': email,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                },
+            )
+            if created:
+                user.set_password(self.DUMMY_PASSWORD)
+            else:
+                user.email = user.email or email
+                user.first_name = user.first_name or first_name
+                user.last_name = user.last_name or last_name
+            user.save()
+            profile = self._ensure_profile(user, is_teacher=False)
+            if not profile.roll_no:
+                profile.roll_no = ''
+                profile.save(update_fields=['roll_no'])
+            students_by_sem[semester].append(user)
+
+        sem_list = sorted(self.SUBJECTS_BY_SEMESTER.keys())
+        for idx in range(dummy_student_count):
+            semester = sem_list[idx % len(sem_list)]
+            username = f'student{idx + 1:03d}'
+            first_name = f'Student{idx + 1:03d}'
+            last_name = 'Demo'
+            email = f'{username}@demo.college.edu'
+            roll_no = f'CS{semester}{(idx + 1):03d}'
+
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'email': email,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                },
+            )
+            if created:
+                user.set_password(self.DUMMY_PASSWORD)
+            else:
+                user.email = user.email or email
+                user.first_name = user.first_name or first_name
+                user.last_name = user.last_name or last_name
+            user.save()
+            profile = self._ensure_profile(user, is_teacher=False)
+            if not profile.roll_no:
+                profile.roll_no = roll_no
+                profile.save(update_fields=['roll_no'])
+
+            students_by_sem[semester].append(user)
+
+        total = sum(len(v) for v in students_by_sem.values())
+        self.stdout.write(self.style.SUCCESS(f'Created/updated {total} students across semesters.'))
+        return students_by_sem
+
+    def _create_classrooms(self, teachers):
+        classrooms_by_sem = {sem: [] for sem in self.SUBJECTS_BY_SEMESTER.keys()}
+        weighted_teacher_indices = [0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 1, 2, 3]
+        pick = 0
+
+        for semester, subjects in self.SUBJECTS_BY_SEMESTER.items():
+            for code, title in subjects:
+                teacher = teachers[weighted_teacher_indices[pick % len(weighted_teacher_indices)]]
+                pick += 1
+                name = f'{code} - {title}'
+                description = f'{title} for semester {semester}. Includes lectures, assessments, and class discussions.'
+
+                classroom, created = Classroom.objects.get_or_create(
+                    name=name,
+                    defaults={
+                        'teacher': teacher,
+                        'created_by': teacher,
+                        'description': description,
+                    },
+                )
+                if not created:
+                    classroom.teacher = teacher
+                    classroom.created_by = classroom.created_by or teacher
+                    classroom.description = description
+                    classroom.save(update_fields=['teacher', 'created_by', 'description'])
+
+                classroom.teachers.add(teacher)
+                classrooms_by_sem[semester].append(classroom)
+
+        self.stdout.write(self.style.SUCCESS('Created/updated classrooms for all semester subjects.'))
+        return classrooms_by_sem
+
+    def _enroll_students(self, students_by_sem, classrooms_by_sem):
+        for semester, students in students_by_sem.items():
+            semester_classrooms = classrooms_by_sem[semester]
+            for classroom in semester_classrooms:
+                classroom.students.add(*students)
+        self.stdout.write(self.style.SUCCESS('Enrolled students only in their semester subjects.'))
+
+    def _youtube_search_link(self, code, title):
+        query = f'{code} {title} full course lecture'
+        return 'https://www.youtube.com/results?search_query=' + query.replace(' ', '+')
+
+    def _make_quiz_question_bank(self, code, title):
+        return [
+            {
+                'text': f'Which topic is central to {title}?',
+                'choices': [
+                    ('Core foundational concepts', True),
+                    ('Only historical timelines', False),
+                    ('Only hardware repair', False),
+                    ('Only UI styling', False),
+                ],
+            },
+            {
+                'text': f'In {code}, what is most important for scoring well?',
+                'choices': [
+                    ('Consistent practice and revision', True),
+                    ('Skipping problem-solving', False),
+                    ('Memorizing without understanding', False),
+                    ('Ignoring class exercises', False),
+                ],
+            },
+            {
+                'text': f'Which is a good strategy while preparing {title}?',
+                'choices': [
+                    ('Solve previous and model questions', True),
+                    ('Study only one unit', False),
+                    ('Avoid notes and examples', False),
+                    ('Skip feedback from instructor', False),
+                ],
+            },
+            {
+                'text': f'{code}: select the best classroom practice.',
+                'choices': [
+                    ('Attend lectures and submit on time', True),
+                    ('Submit after deadlines always', False),
+                    ('Ignore assignments', False),
+                    ('Avoid practical work', False),
+                ],
+            },
+        ]
+
+    def _make_qna_prompts(self, code, title):
+        return [
+            f'Explain one important concept from {title} in your own words with an example.',
+            f'Compare two subtopics you learned in {code} and discuss where each is useful.',
+            f'Describe a real-world application of {title} and mention implementation challenges.',
+        ]
+
+    def _create_assignments_for_classroom(self, classroom, code, title, rng):
+        now = timezone.now()
+        assignments = []
+
+        quiz_assignment, _ = Assignment.objects.get_or_create(
+            classroom=classroom,
+            title=f'{code} Unit Quiz 1',
+            defaults={
+                'assignment_type': Assignment.ASSIGNMENT_TYPE_QUIZ,
+                'prompt': f'Quiz assessment for {title}.',
+                'due_date': now + timedelta(days=7),
+                'late_submission_policy': Assignment.LATE_POLICY_PENALTY,
+                'late_penalty_percent': 10,
+                'max_attempts': 2,
+            },
+        )
+        if quiz_assignment.questions.count() == 0:
+            for q in self._make_quiz_question_bank(code, title):
+                question = Question.objects.create(
+                    assignment=quiz_assignment,
+                    question_type=Question.QUESTION_TYPE_MCQ,
+                    text=q['text'],
+                    marks=1,
+                )
+                for text, correct in q['choices']:
+                    Choice.objects.create(question=question, text=text, is_correct=correct)
+        assignments.append(quiz_assignment)
+
+        qna_assignment, _ = Assignment.objects.get_or_create(
+            classroom=classroom,
+            title=f'{code} Conceptual Q&A 1',
+            defaults={
+                'assignment_type': Assignment.ASSIGNMENT_TYPE_QNA,
+                'prompt': f'Written assessment for {title}.',
+                'due_date': now + timedelta(days=10),
+                'late_submission_policy': Assignment.LATE_POLICY_ALLOW,
+                'max_attempts': 1,
+            },
+        )
+        if qna_assignment.questions.count() == 0:
+            for prompt in self._make_qna_prompts(code, title):
+                Question.objects.create(
+                    assignment=qna_assignment,
+                    question_type=Question.QUESTION_TYPE_QNA,
+                    text=prompt,
+                    marks=rng.choice([5, 6, 8]),
+                )
+        assignments.append(qna_assignment)
+
+        return assignments
+
+    def _populate_content(self, classrooms_by_sem, students_by_sem, rng):
+        for semester, classrooms in classrooms_by_sem.items():
+            students = students_by_sem[semester]
+            sample_students = students[: min(len(students), 20)]
+
+            for classroom in classrooms:
+                code, title = classroom.name.split(' - ', 1)
+
+                lecture_topics = [
+                    f'Introduction to {title}',
+                    f'{title} - Core Concepts',
+                    f'{title} - Problem Solving Session',
+                    f'{title} - Exam Strategy and Revision',
+                ]
+                for topic in lecture_topics:
+                    lecture, _ = Lecture.objects.get_or_create(
+                        classroom=classroom,
+                        title=topic,
+                        defaults={'youtube_link': self._youtube_search_link(code, title)},
+                    )
+                    if sample_students:
                         LectureComment.objects.get_or_create(
                             lecture=lecture,
-                            author=students[0],
-                            defaults={'content': 'Great lecture! Very informative.'}
+                            author=sample_students[0],
+                            content='Thank you, this session helped me understand the topic better.',
                         )
-        
-        # Create notices
-        self.stdout.write('\nCreating notices...')
-        
-        for classroom in classrooms:
-            notices = subject_content[classroom.name]['notices']
-            for title, content in notices:
-                notice, created = Notice.objects.get_or_create(
-                    classroom=classroom,
-                    title=title,
-                    defaults={
-                        'content': content,
-                        'author': classroom.teacher
-                    }
+
+                for notice_title, notice_body in self.NOTICE_TEMPLATES[:3]:
+                    notice, _ = Notice.objects.get_or_create(
+                        classroom=classroom,
+                        title=f'{code}: {notice_title}',
+                        defaults={
+                            'content': notice_body,
+                            'author': classroom.teacher,
+                        },
+                    )
+                    if len(sample_students) > 1:
+                        NoticeComment.objects.get_or_create(
+                            notice=notice,
+                            author=sample_students[1],
+                            content='Acknowledged, thank you for the update.',
+                        )
+
+                assignments = self._create_assignments_for_classroom(classroom, code, title, rng)
+                self._create_sample_submissions(assignments, sample_students, rng)
+
+        self.stdout.write(self.style.SUCCESS('Created lectures, notices, assignments, and submissions.'))
+
+    def _create_sample_submissions(self, assignments, students, rng):
+        if not students:
+            return
+
+        for assignment in assignments:
+            selected_students = students[: max(6, len(students) // 2)]
+            for student in selected_students:
+                if Submission.objects.filter(assignment=assignment, student=student).exists():
+                    continue
+
+                submission = Submission.objects.create(
+                    assignment=assignment,
+                    student=student,
+                    attempt_number=1,
+                    is_late=(rng.random() < 0.18),
                 )
-                if created:
-                    self.stdout.write(self.style.SUCCESS(f'  Created notice: {title}'))
-        
-        # Create assignments
-        self.stdout.write('\nCreating assignments...')
-        
-        for classroom in classrooms:
-            assignments = subject_content[classroom.name]['assignments']
-            for assign_info in assignments:
-                assignment, created = Assignment.objects.get_or_create(
-                    classroom=classroom,
-                    title=assign_info['title'],
-                )
-                if created:
-                    self.stdout.write(self.style.SUCCESS(f'  Created assignment: {assign_info["title"]}'))
-                    
-                    # Create questions and choices
-                    for q_data in assign_info['questions']:
-                        question = Question.objects.create(
-                            assignment=assignment,
-                            text=q_data['text']
+
+                if assignment.is_quiz:
+                    score = 0
+                    for question in assignment.questions.filter(question_type=Question.QUESTION_TYPE_MCQ).prefetch_related('choices'):
+                        choices = list(question.choices.all())
+                        if not choices:
+                            continue
+                        chosen = rng.choice(choices)
+                        StudentAnswer.objects.create(submission=submission, question=question, choice=chosen)
+                        if chosen.is_correct:
+                            score += question.marks
+                    submission.score = score
+                    submission.teacher_feedback = 'Quiz evaluated automatically. Revise weak areas and retry practice questions.'
+                    submission.graded_at = timezone.now()
+                    submission.save(update_fields=['score', 'teacher_feedback', 'graded_at'])
+                else:
+                    total = 0
+                    for question in assignment.questions.filter(question_type=Question.QUESTION_TYPE_QNA):
+                        text = (
+                            f'This answer explains key ideas from {assignment.title} and includes one practical application. '
+                            'Further detail can be added with diagrams and examples.'
                         )
-                        
-                        for choice_text, is_correct in q_data['choices']:
-                            Choice.objects.create(
-                                question=question,
-                                text=choice_text,
-                                is_correct=is_correct
-                            )
-                    
-                    # Create a sample submission from first student
-                    if students:
-                        submission = Submission.objects.create(
-                            assignment=assignment,
-                            student=students[0],
-                            score=0
+                        ans = StudentAnswer.objects.create(
+                            submission=submission,
+                            question=question,
+                            text_response=text,
                         )
-                        
-                        score = 0
-                        for question in assignment.questions.all():
-                            # Randomly pick an answer (first choice for demo)
-                            choice = question.choices.first()
-                            if choice:
-                                StudentAnswer.objects.create(
-                                    submission=submission,
-                                    question=question,
-                                    choice=choice
-                                )
-                                if choice.is_correct:
-                                    score += 1
-                        
-                        submission.score = score
-                        submission.teacher_feedback = "Good effort! Keep practicing."
-                        submission.save()
-                        
-                        self.stdout.write(f'    Created sample submission for {students[0].username}')
-        
-        self.stdout.write(self.style.SUCCESS('\nDummy data creation complete!'))
-        self.stdout.write(self.style.SUCCESS('\nLogin credentials:'))
-        self.stdout.write('  Teacher: username=teacher1, password=password123')
-        self.stdout.write('  Student: username=student1, password=password123')
-        self.stdout.write('  Student: username=student2, password=password123')
-        self.stdout.write('  Student: username=student3, password=password123')
-        self.stdout.write(self.style.SUCCESS('\nClassrooms created:'))
-        self.stdout.write('  - CS101 - Introduction to Computer Science')
-        self.stdout.write('  - MATH201 - Linear Algebra')
-        self.stdout.write('  - PHYS301 - Classical Mechanics')
-        self.stdout.write('  - DATA401 - Data Structures and Algorithms')
-        self.stdout.write('  - WEB501 - Full Stack Web Development')
-        self.stdout.write('  - DB601 - Database Design and SQL')
+
+                        # Grade most Q&A submissions; leave some pending for realistic workflow.
+                        if rng.random() < 0.7:
+                            awarded = max(0, question.marks - rng.choice([0, 1, 2]))
+                            ans.awarded_marks = awarded
+                            ans.teacher_feedback = 'Good attempt. Improve structure and add one more concrete example.'
+                            ans.save(update_fields=['awarded_marks', 'teacher_feedback'])
+                            total += awarded
+
+                    if total > 0:
+                        submission.score = total
+                        submission.teacher_feedback = 'Overall decent response quality. Focus on precision and examples.'
+                        submission.graded_at = timezone.now()
+                        submission.save(update_fields=['score', 'teacher_feedback', 'graded_at'])

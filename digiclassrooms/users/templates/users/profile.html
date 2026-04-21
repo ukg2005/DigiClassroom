@@ -43,6 +43,10 @@
                         <div class="fw-semibold">{% if user.profile.is_admin %}Admin{% elif user.profile.is_teacher %}Teacher{% else %}Student{% endif %}</div>
                     </div>
                     <div class="list-group-item px-0">
+                        <div class="text-muted small mb-1">Roll Number</div>
+                        <div class="fw-semibold">{{ user.profile.roll_no|default:'Not set' }}</div>
+                    </div>
+                    <div class="list-group-item px-0">
                         <div class="text-muted small mb-1">Joined</div>
                         <div class="fw-semibold">{{ user.date_joined|date:"M d, Y" }}</div>
                     </div>
@@ -67,6 +71,11 @@
                                     <label class="form-label fw-semibold">Last Name</label>
                                     {{ form.last_name }}
                                 </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Roll Number</label>
+                                {{ form.roll_no }}
+                                <div class="form-text">Set your college roll number for classroom records.</div>
                             </div>
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">

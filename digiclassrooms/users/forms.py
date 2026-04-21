@@ -59,6 +59,12 @@ class CustomPasswordChangeForm(PasswordChangeForm):
 
 
 class UserProfileForm(forms.ModelForm):
+    roll_no = forms.CharField(
+        required=False,
+        max_length=32,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter roll number'})
+    )
+
     class Meta:
         model = User
         fields = ['email', 'first_name', 'last_name']
@@ -67,6 +73,19 @@ class UserProfileForm(forms.ModelForm):
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        profile = getattr(self.instance, 'profile', None)
+        if profile:
+            self.fields['roll_no'].initial = profile.roll_no
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        profile, _ = Profile.objects.get_or_create(user=user)
+        profile.roll_no = self.cleaned_data.get('roll_no', '').strip()
+        profile.save(update_fields=['roll_no'])
+        return user
 
 
 class SupportTicketForm(forms.ModelForm):
