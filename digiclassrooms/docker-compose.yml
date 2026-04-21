@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-d#1n^_08xs%ku78j=7bmatovw44^l8(uz#%-f!7likjxunk&hx
+      - ALLOWED_HOSTS=127.0.0.1,localhost
+      - CSRF_TRUSTED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
+    volumes:
+      - .:/app
